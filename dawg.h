@@ -5,12 +5,13 @@
 #include "dawgnode.h"
 
 typedef struct String {
-	size_t	length;
-	char*	chr;
+	ssize_t	length;
+	char*	chars;
 } String;
 
 
 typedef enum {
+	EMPTY,
 	ACTIVE,
 	CLOSED
 } DAWGState;
@@ -21,11 +22,14 @@ typedef struct DAWGStatistics {
 	size_t	edges_count;
 	size_t	words_count;
 	size_t	longest_word;
+
+	size_t	sizeof_node;
+	size_t	graph_size;
 } DAWGStatistics;
 
 
 typedef struct DAWG {
-	DAWGNode	q0;
+	DAWGNode*	q0;
 	int			count;
 	DAWGState	state;
 
@@ -33,6 +37,11 @@ typedef struct DAWG {
 	DAWGNode**	reg;
 	String		prev_word;
 } DAWG;
+
+
+static int
+DAWG_init(DAWG* dawg);
+
 
 static int
 DAWG_add_word(DAWG* dawg, String word);
@@ -43,22 +52,26 @@ DAWG_add_word_unchecked(DAWG* dawg, String word);
 
 
 static int
+DAWG_clear(DAWG* dawg);
+
+
+static int
 DAWG_close(DAWG* dawg);
 
 
-typedef int (DAWG_traverse_callback*)(DAWGNode* node, const size_t depth, void* extra);
+typedef int (*DAWG_traverse_callback)(DAWGNode* node, const size_t depth, void* extra);
 
 
 static void
 DAWG_traverse(DAWG* dawg, DAWG_traverse_callback callback, void* extra);
 
 
-int
-DAWG_get_stats(DAWGNode* node, const size_t depth, void* extra);
+static void
+DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats);
 
 
 static size_t PURE
-DAWG_find(DAWG* dawg, const uint8_t* word, const size_t wordlen, DAWGnode** result);
+DAWG_find(DAWG* dawg, const uint8_t* word, const size_t wordlen, DAWGNode** result);
 
 
 static bool PURE

@@ -53,17 +53,20 @@ Basic mathod
 ``len()`` protocol
 	Returns number of distinct words.
 
+``words() => list``
+	Returns list of all words.
+
 ``clear()``
-	Erase all words from set.
+	Erase all words from a set.
 
 ``close()``
-	Don't allow to add new words. Can be reverted only by ``clear()``.
+	Don't allow to add any new words. Can be reverted only by ``clear()`` [???].
 
 
 Iterator
 ~~~~~~~~
 
-``words([prefix])``
+``iter([prefix])`` [TODO]
 	Yields all words [starting with prefix].
 
 
@@ -71,7 +74,7 @@ Other
 ~~~~~
 
 ``get_stats() => dict``
-	Returns dictionary containing some statustics about underlaying data structure:
+	Returns dictionary containing some statistics about underlaying data structure:
 
 	* ``nodes_count``	--- number of nodes (same as ``len(dawg)``)
 	* ``edges_count``	--- number of edges
@@ -82,20 +85,19 @@ Other
 	* ``longest_word``	--- length of the longest word
 
 
-``dump() => (list of nodes, list of edges)``
-	Returns lists describing DAWG.
+``dump() => (set of nodes, set of edges)``
+	Returns sets describing DAWG, elements are tuples.
 	
-	List of nodes consists tuples:
+	Node tuple:
 
 	* unique id of node (number)
 	* end of word marker
 
-	List of edges:
+	Edge tuple:
 
 	* source id
 	* edge label --- letter
-	* dest id
-
+	* destination id
 
 
 Changes
