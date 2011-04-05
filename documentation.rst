@@ -66,8 +66,8 @@ Basic mathod
 Iterator
 ~~~~~~~~
 
-``iter([prefix])`` [TODO]
-	Yields all words [starting with prefix].
+Class supports ``iter`` protocol, i.e. ``iter(DAWGobject)`` returns
+iterator. Iterator is a lazy version of ``words()`` method.
 
 
 Other
@@ -76,9 +76,9 @@ Other
 ``get_stats() => dict``
 	Returns dictionary containing some statistics about underlaying data structure:
 
-	* ``nodes_count``	--- number of nodes (same as ``len(dawg)``)
+	* ``nodes_count``	--- number of nodes
 	* ``edges_count``	--- number of edges
-	* ``words_count``	--- number of distinct words
+	* ``words_count``	--- number of distinct words (same as ``len(dawg)``)
 	* ``node_size``		--- size of single node (in bytes)
 	* ``graph_size``	--- size of whole graph (in bytes); it's about
 	  ``nodes_count * node_size + edges_count * pointer size``
@@ -95,9 +95,9 @@ Other
 
 	Edge tuple:
 
-	* source id
+	* source node id
 	* edge label --- letter
-	* destination id
+	* destination node id
 
 
 Changes

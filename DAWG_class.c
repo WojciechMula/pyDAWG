@@ -1,4 +1,5 @@
 #include "DAWG_class.h"
+#include "DAWGIterator_class.h"
 
 
 static
@@ -26,7 +27,7 @@ dawgobj_del(PyObject* self) {
 #define dawg (((DAWGclass*)self)->dawg)
 	DAWG_clear(&dawg);
 	PyObject_Del(self);
-#undef automaton
+#undef dawg
 }
 
 
@@ -51,19 +52,21 @@ get_string(PyObject* value, String* string) {
 
 static PyObject*
 dawgmeth_add_word(PyObject* self, PyObject* value) {
-#define dawg (((DAWGclass*)self)->dawg)
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
 	String	word;
-	PyObject*	obj;
+	PyObject* tmp;
 
-	obj = get_string(value, &word);
-	if (obj == NULL)
+	tmp = get_string(value, &word);
+	if (tmp == NULL)
 		return NULL;
 
 	const int ret = DAWG_add_word(&dawg, word);
-	Py_DECREF(obj);
+	Py_DECREF(tmp);
 
 	switch (ret) {
 		case 1:
+			obj->version += 1;
 			Py_RETURN_TRUE;
 
 		case 0:
@@ -89,19 +92,21 @@ dawgmeth_add_word(PyObject* self, PyObject* value) {
 
 static PyObject*
 dawgmeth_add_word_unchecked(PyObject* self, PyObject* value) {
-#define dawg (((DAWGclass*)self)->dawg)
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
 	String	word;
-	PyObject*	obj;
+	PyObject*	tmp;
 
-	obj = get_string(value, &word);
-	if (obj == NULL)
+	tmp = get_string(value, &word);
+	if (tmp == NULL)
 		return NULL;
 
 	const int ret = DAWG_add_word_unchecked(&dawg, word);
-	Py_DECREF(obj);
+	Py_DECREF(tmp);
 
 	switch (ret) {
 		case 1:
+			obj->version += 1;
 			Py_RETURN_TRUE;
 
 		case 0:
@@ -115,6 +120,7 @@ dawgmeth_add_word_unchecked(PyObject* self, PyObject* value) {
 			Py_RETURN_NONE;
 	}
 #undef dawg
+#undef obj
 }
 
 
@@ -172,6 +178,12 @@ dawgmeth_match(PyObject* self, PyObject* value) {
 
 
 static PyObject*
+dawgmeth_iter(PyObject* self) {
+	return DAWGIterator_new((DAWGclass*)self);
+}
+
+
+static PyObject*
 dawgmeth_longest_prefix(PyObject* self, PyObject* value) {
 #define dawg (((DAWGclass*)self)->dawg)
 	String	word;
@@ -199,19 +211,25 @@ dawgmeth_len(PyObject* self) {
 
 static PyObject*
 dawgmeth_clear(PyObject* self, PyObject* args) {
-#define dawg (((DAWGclass*)self)->dawg)
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
 	DAWG_clear(&dawg);
+	obj->version += 1;
 	Py_RETURN_NONE;
 #undef dawg
+#undef obj
 }
 
 
 static PyObject*
 dawgmeth_close(PyObject* self, PyObject* args) {
-#define dawg (((DAWGclass*)self)->dawg)
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
 	DAWG_close(&dawg);
+	obj->version += 1;
 	Py_RETURN_NONE;
 #undef dawg
+#undef obj
 }
 
 
@@ -440,7 +458,7 @@ PyTypeObject dawg_type = {
 	0,                                          /* tp_clear */
 	0,                                          /* tp_richcompare */
 	0,                                          /* tp_weaklistoffset */
-	0,                                          /* tp_iter */
+	dawgmeth_iter,								/* tp_iter */
 	0,                                          /* tp_iternext */
 	dawg_methods,								/* tp_methods */
 	0,							                /* tp_members */

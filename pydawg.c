@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dawgnode.h"
 #include "dawg.h"
+#include "DAWG_class.h"
+#include "DAWGIterator_class.h"
 
 // c libary inlined
 #include "dawgnode.c"
