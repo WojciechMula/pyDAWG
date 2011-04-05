@@ -9,6 +9,7 @@ DAWG_init(DAWG* dawg) {
 	dawg->q0	= NULL;
 	dawg->count	= 0;
 	dawg->state	= EMPTY;
+	dawg->longest_word = 0;
 
 	dawg->n		= 0;
 	dawg->reg	= NULL;
@@ -35,8 +36,8 @@ string_cmp(const String s1, const String s2) {
 
 int
 DAWG_add_word(DAWG* dawg, String word) {
-	if (string_cmp(dawg->prev_word, word) < 0)
-		return -1;
+	if (string_cmp(dawg->prev_word, word) < 0)	// XXX
+		return -2;
 
 	return DAWG_add_word_unchecked(dawg, word);
 }
@@ -44,6 +45,7 @@ DAWG_add_word(DAWG* dawg, String word) {
 
 int
 DAWG_add_word_unchecked(DAWG* dawg, String word) {
+	int ret = 1;
 	int i = 0;
 
 	if (dawg->q0 == NULL) {
@@ -69,7 +71,9 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	// 3. add sufix
 	while (i < word.length) {
 		DAWGNode* new = dawgnode_new(word.chars[i]);
-		ASSERT(new);
+		if (new == NULL)
+			return -1;
+		
 		dawgnode_set_child(state, word.chars[i], new);
 
 		state = new;
@@ -79,22 +83,30 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	if (state->eow == false) {
 		state->eow = true;
 		dawg->count += 1;
+		ret = 1; // new word
 	}
+	else
+		ret = 0; // existing word
+
+	// update longest_word
+	if (word.length > dawg->longest_word)
+		dawg->longest_word = word.length;
 
 	// save previous word
 	if (dawg->prev_word.chars)
 		free(dawg->prev_word.chars);
 
-
 	dawg->prev_word.length	= word.length;
 	dawg->prev_word.chars	= (char*)memalloc(word.length);
-	ASSERT(dawg->prev_word.chars);
-	memcpy(dawg->prev_word.chars, word.chars, word.length);
+	if (UNLIKELY(dawg->prev_word.chars == NULL))
+		return -1;
+	else
+		memcpy(dawg->prev_word.chars, word.chars, word.length);
 
 	word.length	= 0;
 	word.chars	= NULL;
 	
-	return 1;
+	return ret;
 }
 
 
@@ -153,7 +165,7 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 			if (dawgnode_equivalence(item->child, r)) {
 				ASSERT(dawgnode_get_child(item->parent, item->label) == item->child);
 				dawgnode_set_child(item->parent, item->label, r);
-				//dawgnode_free(item->child);
+				dawgnode_free(item->child);
 
 				replaced = true;
 				break;
@@ -177,6 +189,16 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 
 static bool PURE
 dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
+	/*
+		Both states p and q are equivalent (subtrees
+		rooted at p and q forms same languages):
+
+		1. both are final/non-final
+		2. has same number of children
+		3. outgoing edges has same labels
+		4. outgoing edges come to the same states
+	
+	*/
 
 	if (p->eow != q->eow)
 		return false;
@@ -185,58 +207,50 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
 		return false;
 
 	size_t n = p->n;
-#if 1
 	size_t i;
 	for (i=0; i < n; i++) {
+		// nodes are always sorted, so side-by-side compare is possible
+
 		if (p->next[i].letter != q->next[i].letter)
 			return false;
 
 		if (p->next[i].child != q->next[i].child)
 			return false;
 	}
-#else
-	// in debug version we follow exact definition of states equivalence
-	DAWGNode* cp;
-	DAWGNode* cq;
-	size_t i, j;
-	for (i=0; i < n; i++) {
-		cp = p->next[i].child;
-		cq = NULL;
-		for (j=0; j < n; j++)
-			if (q->next[j].letter == p->next[i].letter) {
-				cq = q->next[j].child;
-				break;
-			}
 
-		if (cq == NULL)
-			return false;
-
-		if (not dawgnode_equivalence(cp, cq))
-			return false;
-	}
-#endif
 	return true;
 }
 
-void
-DAWG_clear_aux(DAWGNode* node) {
-	size_t i;
-	for (i=0; i < node->n; i++)
-		DAWG_clear_aux(node->next[i].child);
 
-	dawgnode_free(node);
+int
+DAWG_clear_aux(DAWGNode* node, const size_t depth, void* extra) {
+	if (node->next)
+		memfree(node->next);
+
+	memfree(node);
+	return 1;
 }
 
 
 static int
 DAWG_clear(DAWG* dawg) {
-	DAWG_clear_aux(dawg->q0);
+	DAWG_traverse_DFS_once(dawg, DAWG_clear_aux, NULL);
 
-	dawg->q0 = NULL;
+	dawg->q0	= NULL;
+	dawg->count	= 0;
 	dawg->state	= EMPTY;
+	dawg->longest_word = 0;
+	
 	dawg->n		= 0;
-	memfree(dawg->reg);
-	memfree(dawg->prev_word.chars);
+	if (dawg->reg) {
+		memfree(dawg->reg);
+		dawg->reg = NULL;
+	}
+
+	if (dawg->prev_word.chars) {
+		memfree(dawg->prev_word.chars);
+		dawg->prev_word.chars = NULL;
+	}
 
 	dawg->prev_word.chars	= NULL;
 	dawg->prev_word.length	= 0;
@@ -246,13 +260,13 @@ DAWG_clear(DAWG* dawg) {
 
 
 int
-DAWG_traverse_aux(DAWGNode* node, const size_t depth, DAWG_traverse_callback callback, void* extra) {
+DAWG_traverse_DFS_aux(DAWGNode* node, const size_t depth, DAWG_traverse_callback callback, void* extra) {
 	if (callback(node, depth, extra) == 0)
 		return 0;
 
 	size_t i;
 	for (i=0; i < node->n; i++) {
-		if (DAWG_traverse_aux(node->next[i].child, depth + 1, callback, extra) == 0)
+		if (DAWG_traverse_DFS_aux(node->next[i].child, depth + 1, callback, extra) == 0)
 			return 0;
 	}
 
@@ -260,12 +274,51 @@ DAWG_traverse_aux(DAWGNode* node, const size_t depth, DAWG_traverse_callback cal
 }
 
 
-static void
-DAWG_traverse(DAWG* dawg, DAWG_traverse_callback callback, void* extra) {
+static int
+DAWG_traverse_DFS(DAWG* dawg, DAWG_traverse_callback callback, void* extra) {
 	ASSERT(dawg);
 	ASSERT(callback);
 
-	DAWG_traverse_aux(dawg->q0, 0, callback, extra);
+	return DAWG_traverse_DFS_aux(dawg->q0, 0, callback, extra);
+}
+
+
+void
+DAWG_traverse_clear_visited(DAWGNode* node) {
+	node->visited = 0;
+
+	int i;
+	for (i=0; i < node->n; i++)
+		DAWG_traverse_clear_visited(node->next[i].child);
+}
+
+
+int
+DAWG_traverse_DFS_once_aux(DAWGNode* node, const size_t depth, DAWG_traverse_callback callback, void* extra) {
+	if (node->visited != 0)
+		return 1;
+
+	node->visited = 1;
+	int i;
+	for (i=0; i < node->n; i++)
+		if (DAWG_traverse_DFS_once_aux(node->next[i].child, depth + 1, callback, extra) == 0)
+			return 0;
+
+	return callback(node, depth, extra);
+}
+
+
+static int
+DAWG_traverse_DFS_once(DAWG* dawg, DAWG_traverse_callback callback, void* extra) {
+	ASSERT(dawg);
+	ASSERT(callback);
+
+	if (dawg->q0) {
+		DAWG_traverse_clear_visited(dawg->q0);
+		return DAWG_traverse_DFS_once_aux(dawg->q0, 0, callback, extra);
+	}
+	else
+		return 1;
 }
 
 
@@ -274,11 +327,7 @@ DAWG_get_stats_aux(DAWGNode* node, const size_t depth, void* extra) {
 #define stats ((DAWGStatistics*)extra)
 	stats->nodes_count	+= 1;
 	stats->edges_count	+= node->n;
-	stats->words_count	+= (int)(node->eow != 0);
 	stats->graph_size	+= dawgnode_get_size(node);
-
-	if (depth > stats->longest_word)
-		stats->longest_word = depth;
 #undef stats
 	return 1;
 }
@@ -291,12 +340,12 @@ DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats) {
 
 	stats->nodes_count	= 0;
 	stats->edges_count	= 0;
-	stats->words_count	= 0;
-	stats->longest_word	= 0;
+	stats->words_count	= dawg->count;
+	stats->longest_word	= dawg->longest_word;
 	stats->sizeof_node	= sizeof(DAWGNode);
 	stats->graph_size	= 0;
 
-	DAWG_traverse(dawg, DAWG_get_stats_aux, stats);
+	DAWG_traverse_DFS_once(dawg, DAWG_get_stats_aux, stats);
 }
 
 

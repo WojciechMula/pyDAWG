@@ -24,7 +24,7 @@ dawgobj_new(PyTypeObject* type, PyObject* args, PyObject* kwargs) {
 static void
 dawgobj_del(PyObject* self) {
 #define dawg (((DAWGclass*)self)->dawg)
-	//DAWG_clear(&dawg); XXX
+	DAWG_clear(&dawg);
 	PyObject_Del(self);
 #undef automaton
 }
@@ -69,6 +69,17 @@ dawgmeth_add_word(PyObject* self, PyObject* value) {
 		case 0:
 			Py_RETURN_FALSE;
 
+		case -2:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"word is less then previosuly added, can't update DAWG"
+			);
+			return NULL;
+
+		case -1:
+			PyErr_NoMemory();
+			return NULL;
+
 		default:
 			Py_RETURN_NONE;
 	}
@@ -89,10 +100,20 @@ dawgmeth_add_word_unchecked(PyObject* self, PyObject* value) {
 	const int ret = DAWG_add_word_unchecked(&dawg, word);
 	Py_DECREF(obj);
 
-	if (ret)
-		Py_RETURN_TRUE;
-	else
-		Py_RETURN_FALSE;
+	switch (ret) {
+		case 1:
+			Py_RETURN_TRUE;
+
+		case 0:
+			Py_RETURN_FALSE;
+
+		case -1:
+			PyErr_NoMemory();
+			return NULL;
+
+		default:
+			Py_RETURN_NONE;
+	}
 #undef dawg
 }
 
@@ -276,7 +297,7 @@ dawgmeth_dump(PyObject* self, PyObject* args) {
 	if (dump.nodes == NULL or dump.edges == NULL)
 		goto error;
 
-	DAWG_traverse(&dawg, dump_aux, &dump);
+	DAWG_traverse_DFS(&dawg, dump_aux, &dump);
 	if (dump.error)
 		goto error;
 	else {
@@ -293,7 +314,7 @@ error:
 
 typedef struct WordsAux {
 	PyObject*	list;
-	char		buffer[1024];
+	char*		buffer;
 	bool		error;
 } WordsAux;
 
@@ -333,9 +354,17 @@ dawgmeth_words(PyObject* self, PyObject* args) {
 #define dawg (((DAWGclass*)self)->dawg)
 	WordsAux words;
 
-	words.error	= false;
-	words.list	= PyList_New(0);
+	words.error		= false;
+	words.buffer	= NULL;
+	words.list		= NULL;
 
+	words.buffer = (char*)memalloc(dawg.longest_word + 1);
+	if (words.buffer == NULL) {
+		PyErr_NoMemory();
+		goto error;
+	}
+
+	words.list = PyList_New(0);
 	if (words.list == NULL)
 		goto error;
 
@@ -351,6 +380,10 @@ dawgmeth_words(PyObject* self, PyObject* args) {
 
 error:
 	Py_XDECREF(words.list);
+
+	if (words.buffer != NULL)
+		memfree(words.buffer);
+
 	return NULL;
 #undef dawg
 }
