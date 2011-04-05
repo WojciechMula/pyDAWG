@@ -30,22 +30,32 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q);
 
 static int
 string_cmp(const String s1, const String s2) {
-	if (s1.length == s2.length)
-		return strncmp(s1.chars, s2.chars, s1.length);
-	else
-	if (s2.length < s1.length)
+	size_t i;
+	size_t n = s1.length < s2.length ? s1.length : s2.length;
+	for (i=0; i < n; i++) {
+		if ((unsigned char)s1.chars[i] < (unsigned char)s2.chars[i])
+			return -1;
+		else
+		if ((unsigned char)s1.chars[i] > (unsigned char)s2.chars[i])
+			return +1;
+	}
+
+	if (i < s1.length)
+		return 1;
+	else if (i < s2.length)
 		return -1;
 	else
-		return +1;
+		return 0;
 }
 
 
 int
 DAWG_add_word(DAWG* dawg, String word) {
-	if (string_cmp(dawg->prev_word, word) < 0)	// XXX
+	const int k = string_cmp(dawg->prev_word, word);
+	if (k > 0)
 		return -2;
-
-	return DAWG_add_word_unchecked(dawg, word);
+	else
+		return DAWG_add_word_unchecked(dawg, word);
 }
 
 
