@@ -30,7 +30,13 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q);
 
 static int
 string_cmp(const String s1, const String s2) {
-	return strcmp(s1.chars, s2.chars);
+	if (s1.length == s2.length)
+		return strncmp(s1.chars, s2.chars, s1.length);
+	else
+	if (s2.length < s1.length)
+		return -1;
+	else
+		return +1;
 }
 
 

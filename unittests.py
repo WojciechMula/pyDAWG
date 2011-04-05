@@ -12,7 +12,22 @@ class TestDAWG(unittest.TestCase):
 
 		return self.D
 
+	
 	def test_add_word(self):
+		D  = self.D
+		w1 = b"cat"
+		D.add_word(w1)
+		D.add_word(w1)	# adding same word again is ok
+
+		w2 = b"catalog"
+		D.add_word(w2)	# ok 'catalog' > 'cat'
+
+		w3 = b"any"
+		with self.assertRaises(ValueError):
+			D.add_word(w3)
+
+
+	def test_add_word_unchecked(self):
 		self.add_test_words()
 
 		if False:
@@ -91,10 +106,27 @@ class TestDAWG(unittest.TestCase):
 		self.assertEqual(set(L), set(self.words))
 
 
-	def test_get_stats(self):
+	def test_iter(self):
 		D = self.add_test_words()
 
-		print(self.D.get_stats())
+		L = set(D)
+		self.assertEqual(set(L), set(self.words))
+
+	
+	def test_iter_invalidate(self):
+		D = self.add_test_words()
+		
+		it = iter(D)
+		w = next(it)
+		
+		D.clear()
+		with self.assertRaises(ValueError):
+			w = next(it)
+
+
+	def test_get_stats(self):
+		D = self.add_test_words()
+		#print(self.D.get_stats())
 
 
 if __name__ == '__main__':
