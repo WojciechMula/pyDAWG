@@ -4,6 +4,29 @@
 #include "common.h"
 #include "dawgnode.h"
 
+static bool PURE
+dawgnode_equivalence(DAWGNode* p, DAWGNode* q);
+
+static uint32_t PURE
+dawgnode_hash(DAWGNode* p);
+
+// setup hash table
+
+#define	HASH_TYPE			uint32_t
+#define	HASH_KEY_TYPE		DAWGNode*
+//#define HASH_DATA_TYPE		-- no data
+#define	HASH_EQ_FUN(a, b)	((a) == (b))
+#define	HASH_GET_HASH(x)	(dawgnode_hash(x))
+#define	HASH_STATIC			static
+#define	HASH_ALLOC	malloc
+#define	HASH_FREE	free
+
+#define HASHNAME(name)	name
+#include "hash/hashtable.c"
+
+// end setup hash table
+
+
 typedef struct String {
 	ssize_t	length;
 	char*	chars;
@@ -34,8 +57,7 @@ typedef struct DAWG {
 	int			longest_word;	///< length of the longest word (useful when iterating through words, cheap to keep up to date)
 	DAWGState	state;			///< DAWG state
 
-	size_t		n;				///< enteries in registry
-	DAWGNode**	reg;			///< registry -- valid states
+	HashTable	reg;			///< registry -- valid states
 	String		prev_word;		///< previosuly added word
 } DAWG;
 
@@ -43,6 +65,11 @@ typedef struct DAWG {
 /* init DAWG structure */
 static int
 DAWG_init(DAWG* dawg);
+
+
+/* free all structures */
+static int
+DAWG_free(DAWG* dawg);
 
 
 /* add new word, check if new word is larger then previosuly added */

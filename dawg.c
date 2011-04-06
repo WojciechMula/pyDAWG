@@ -11,8 +11,7 @@ DAWG_init(DAWG* dawg) {
 	dawg->state	= EMPTY;
 	dawg->longest_word = 0;
 
-	dawg->n		= 0;
-	dawg->reg	= NULL;
+	hashtable_init(&dawg->reg, 101);
 
 	dawg->prev_word.chars	= NULL;
 	dawg->prev_word.length	= 0;
@@ -21,11 +20,17 @@ DAWG_init(DAWG* dawg) {
 }
 
 
+static int
+DAWG_free(DAWG* dawg) {
+	DAWG_clear(dawg);
+	hashtable_destroy(&dawg->reg);
+	return 0;
+}
+
+
 static DAWGNode*
 DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_t index);
 
-static bool PURE
-dawgnode_equivalence(DAWGNode* p, DAWGNode* q);
 
 
 static int
@@ -56,6 +61,15 @@ DAWG_add_word(DAWG* dawg, String word) {
 		return -2;
 	else
 		return DAWG_add_word_unchecked(dawg, word);
+}
+
+
+static int ALWAYS_INLINE
+resize_hash(HashTable* hashtable) {
+	if (hashtable->count > hashtable->count_threshold)
+		return hashtable_resize(hashtable, hashtable->size * 2);
+	else
+		return 0;
 }
 
 
@@ -90,7 +104,25 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 		if (new == NULL)
 			return -1;
 		
+		HashListItem* item = hashtable_del(
+			&dawg->reg,
+			HASH_GET_HASH(state),
+			state
+		);
+
+		if (item)
+			memfree(item);
+
 		dawgnode_set_child(state, word.chars[i], new);
+
+		if (item) {
+			resize_hash(&dawg->reg);
+			hashtable_add(
+				&dawg->reg,
+				HASH_GET_HASH(state),
+				state
+			);
+		}
 
 		state = new;
 		i += 1;
@@ -159,10 +191,14 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 	size_t i;
 	for (i=index; i < string.length; i++) {
 		StackItem* item = (StackItem*)list_item_new(sizeof(StackItem));
-		item->parent = state;
-		item->label  = string.chars[i];
-		item->child  = state = dawgnode_get_child(item->parent, item->label);
-		list_push_front(&stack, (ListItem*)item);
+		if (item) {
+			item->parent = state;
+			item->label  = string.chars[i];
+			item->child  = state = dawgnode_get_child(item->parent, item->label);
+			list_push_front(&stack, (ListItem*)item);
+		}
+		else
+			goto error;
 	}
 
 	// replace or register
@@ -172,32 +208,58 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 			break;
 
 		// 1) try replace
-		size_t i;
 		bool replaced = false;
-		for (i=0; i < dawg->n; i++) {
-			DAWGNode* r = dawg->reg[i];
-			ASSERT(r);
 
+		HashListItem* reg = hashtable_get_list(&dawg->reg, HASH_GET_HASH(item->child));
+		while (reg) {
+			DAWGNode* r = reg->key;
+			ASSERT(r);
+			
 			if (dawgnode_equivalence(item->child, r)) {
 				ASSERT(dawgnode_get_child(item->parent, item->label) == item->child);
+
+				HashListItem* prev = hashtable_del(
+										&dawg->reg,
+										HASH_GET_HASH(item->parent),
+										item->parent
+									);
+
+				if (prev)
+					memfree(prev);
+
 				dawgnode_set_child(item->parent, item->label, r);
 				dawgnode_free(item->child);
+
+				if (prev) {
+					resize_hash(&dawg->reg);
+					hashtable_add(
+						&dawg->reg,
+						HASH_GET_HASH(item->parent),
+						item->parent
+					);
+				}
 
 				replaced = true;
 				break;
 			}
+			else
+				reg = reg->next;
 		}
 
 		// 2) register new unique state
 		if (not replaced) {
-			dawg->reg = (DAWGNode**)memrealloc(dawg->reg, (dawg->n + 1) * sizeof(DAWGNode*));
-			dawg->reg[dawg->n] = item->child;
-			dawg->n += 1;
+			resize_hash(&dawg->reg);
+			hashtable_add(
+				&dawg->reg,
+				HASH_GET_HASH(item->child),
+				item->child
+			);
 		}
 
 		list_item_delete((ListItem*)item);
 	} // while
 
+error:
 	list_delete(&stack);
 	return 0;
 }
@@ -238,6 +300,41 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
 }
 
 
+static uint32_t PURE
+dawgnode_hash(DAWGNode* p) {
+	/*
+		hash is calulated from following components:
+		- eow marker
+		- outgoing link count
+		- link labels
+		- address of link destinations
+
+		compare with dawgnode_equivalence
+	*/
+	static const uint32_t FNV_offset	= 2166136261u;
+	static const uint32_t FNV_prime		= 16777619u;
+	
+	uint32_t hash = FNV_offset;
+#define FNV_step(x) hash = (hash * FNV_prime); hash = hash ^ (x);
+	FNV_step(p->n);
+	FNV_step(p->eow);
+
+	size_t i;
+	for (i=0; i < p->n; i++) {
+		FNV_step(p->next[i].letter);
+
+		const uint32_t ptr = (uint32_t)(p->next[i].child);
+		FNV_step(ptr & 0xff);
+		FNV_step((ptr >> 8) & 0xff);
+		FNV_step((ptr >> 16) & 0xff);
+		FNV_step((ptr >> 24) & 0xff);
+	}
+	
+#undef FNV_step
+	return hash;
+}
+
+
 int
 DAWG_clear_aux(DAWGNode* node, const size_t depth, void* extra) {
 	if (node->next)
@@ -257,11 +354,7 @@ DAWG_clear(DAWG* dawg) {
 	dawg->state	= EMPTY;
 	dawg->longest_word = 0;
 	
-	dawg->n		= 0;
-	if (dawg->reg) {
-		memfree(dawg->reg);
-		dawg->reg = NULL;
-	}
+	hashtable_clear(&dawg->reg);
 
 	if (dawg->prev_word.chars) {
 		memfree(dawg->prev_word.chars);

@@ -25,7 +25,7 @@ dawgobj_new(PyTypeObject* type, PyObject* args, PyObject* kwargs) {
 static void
 dawgobj_del(PyObject* self) {
 #define dawg (((DAWGclass*)self)->dawg)
-	DAWG_clear(&dawg);
+	DAWG_free(&dawg);
 	PyObject_Del(self);
 #undef dawg
 }
