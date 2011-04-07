@@ -4,6 +4,9 @@
 
 HASH_STATIC int
 L(hashtable_init)(L(HashTable)* hashtable, const size_t size) {
+	if (size == 0)
+		return -2;
+
 	hashtable->size	 = size;
 	hashtable->count_threshold = size * 0.7;
 	hashtable->count = 0;
@@ -79,6 +82,7 @@ L(hashtable_destroy)(L(HashTable)* hashtable) {
 		L(hashtable_clear)(hashtable);
 		HASH_FREE(hashtable->table);
 		hashtable->size = 0;
+		hashtable->table = NULL;
 		return 0;
 	}
 	else

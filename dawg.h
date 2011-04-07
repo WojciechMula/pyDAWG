@@ -48,6 +48,9 @@ typedef struct DAWGStatistics {
 
 	size_t	sizeof_node;
 	size_t	graph_size;
+
+	size_t	hash_tbl_size;
+	size_t	hash_tbl_count;
 } DAWGStatistics;
 
 

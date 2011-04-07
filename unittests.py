@@ -22,9 +22,20 @@ class TestDAWG(unittest.TestCase):
 		w2 = b"catalog"
 		D.add_word(w2)	# ok 'catalog' > 'cat'
 
-		w3 = b"any"
+		w3 = b"any"		# failure: 'any' < 'catalog'
 		with self.assertRaises(ValueError):
 			D.add_word(w3)
+
+
+	def test_close(self):
+		D = self.add_test_words()
+
+		D.close()	# now close
+		with self.assertRaises(AttributeError):
+			D.add_word(b"won't work")
+
+		D.clear()	# clear, reset state
+		D = self.add_test_words()
 
 
 	def test_add_word_unchecked(self):

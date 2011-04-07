@@ -48,7 +48,9 @@ get_string(PyObject* value, String* string) {
 
 
 #define dawgmeth_add_word_doc \
-	"Add new word."
+	"Add word, returns True if word didn't exists in a set." \
+	"Procedure checks if ``word`` is greater then previously " \
+	"added word (in lexicography order)."
 
 static PyObject*
 dawgmeth_add_word(PyObject* self, PyObject* value) {
@@ -72,6 +74,14 @@ dawgmeth_add_word(PyObject* self, PyObject* value) {
 		case 0:
 			Py_RETURN_FALSE;
 
+
+		case -3:
+			PyErr_SetString(
+				PyExc_AttributeError,
+				"DAWG has been freezed, no further chanages are allowed"
+			);
+			return NULL;
+
 		case -2:
 			PyErr_SetString(
 				PyExc_ValueError,
@@ -89,6 +99,11 @@ dawgmeth_add_word(PyObject* self, PyObject* value) {
 #undef dawg
 }
 
+
+#define dawgmeth_add_word_unchecked_doc \
+	"Does the same thing as ``add_word`` but do not check ``word`` "\
+	"order. Method should be used if one is sure, that input data " \
+	"satisfy	algorithm requirements, i.e. words order is valid." \
 
 static PyObject*
 dawgmeth_add_word_unchecked(PyObject* self, PyObject* value) {
@@ -111,6 +126,13 @@ dawgmeth_add_word_unchecked(PyObject* self, PyObject* value) {
 
 		case 0:
 			Py_RETURN_FALSE;
+
+		case -3:
+			PyErr_SetString(
+				PyExc_AttributeError,
+				"DAWG has been freezed, no further chanages are allowed"
+			);
+			return NULL;
 
 		case -1:
 			PyErr_NoMemory();
@@ -141,6 +163,9 @@ dawgmeth_contains(PyObject* self, PyObject* value) {
 }
 
 
+#define dawgmeth_exists_doc \
+	"Check if word is in set."
+
 static PyObject*
 dawgmeth_exists(PyObject* self, PyObject* value) {
 	switch (dawgmeth_contains(self, value)) {
@@ -155,6 +180,9 @@ dawgmeth_exists(PyObject* self, PyObject* value) {
 	}
 }
 
+
+#define dawgmeth_match_doc \
+	"Check if word or any of its prefix is in a set."
 
 static PyObject*
 dawgmeth_match(PyObject* self, PyObject* value) {
@@ -183,6 +211,9 @@ dawgmeth_iter(PyObject* self) {
 }
 
 
+#define dawgmeth_longest_prefix_doc \
+	"Returns length of the longest prefix of word that exists in a set."
+
 static PyObject*
 dawgmeth_longest_prefix(PyObject* self, PyObject* value) {
 #define dawg (((DAWGclass*)self)->dawg)
@@ -209,6 +240,9 @@ dawgmeth_len(PyObject* self) {
 }
 
 
+#define dawgmeth_clear_doc \
+	"Erase all words from set."
+
 static PyObject*
 dawgmeth_clear(PyObject* self, PyObject* args) {
 #define obj ((DAWGclass*)self)
@@ -219,6 +253,12 @@ dawgmeth_clear(PyObject* self, PyObject* args) {
 #undef dawg
 #undef obj
 }
+
+
+#define dawgmeth_close_doc \
+	"Don't allow to add any new words. Also free some memory (a hash table) " \
+	"used to perform incremental algorithm." \
+	"Can be reverted only by ``clear()``." \
 
 
 static PyObject*
@@ -233,6 +273,18 @@ dawgmeth_close(PyObject* self, PyObject* args) {
 }
 
 
+#define dawgmeth_get_stats_doc \
+	"Returns dictionary containing some statistics about underlaying data structure:\n" \
+	"* ``nodes_count``	--- number of nodes\n" \
+	"* ``edges_count``	--- number of edges\n" \
+	"* ``words_count``	--- number of distinct words (same as ``len(dawg)``)\n" \
+	"* ``node_size``	--- size of single node (in bytes)\n" \
+	"* ``graph_size``	--- size of whole graph (in bytes); it's about\n" \
+	"  ``nodes_count * node_size + edges_count * pointer size``\n" \
+	"* ``longest_word``	--- length of the longest word\n" \
+	"* ``hash_tbl_size``	--- size of a helper hash table\n" \
+	"* ``hash_tbl_count`` --- number of items in a helper hash table"
+
 static PyObject*
 dawgmeth_get_stats(PyObject* self, PyObject* args) {
 #define obj ((DAWGclass*)self)
@@ -243,14 +295,16 @@ dawgmeth_get_stats(PyObject* self, PyObject* args) {
 	}
 
     PyObject* dict = Py_BuildValue(
-        "{s:i,s:i,s:i,s:i,s:i,s:i}",
+        "{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
 #define emit(name) #name, obj->stats.name
         emit(nodes_count),
         emit(edges_count),
         emit(words_count),
         emit(longest_word),
         emit(sizeof_node),
-        emit(graph_size)
+        emit(graph_size),
+		emit(hash_tbl_size),
+		emit(hash_tbl_count)
 #undef emit
     );
 
@@ -300,6 +354,11 @@ dump_aux(DAWGNode* node, const size_t depth, void* extra) {
 	return 1;
 }
 
+
+#define dawgmeth_dump_doc \
+	"Returns  sets describing DAWG, elements are tuples." \
+	"Node tuple: unique id of node (number), end of word marker" \
+	"Edge tuple: source node id, edge label --- letter, destination node id"
 
 static PyObject*
 dawgmeth_dump(PyObject* self, PyObject* args) {
@@ -367,6 +426,9 @@ words_aux(DAWGNode* node, const size_t depth, WordsAux* words) {
 }
 
 
+#define dawgmeth_words_doc \
+	"Returns number of distinct words."
+
 static PyObject*
 dawgmeth_words(PyObject* self, PyObject* args) {
 #define dawg (((DAWGclass*)self)->dawg)
@@ -411,8 +473,20 @@ error:
 static
 PySequenceMethods dawg_as_sequence;
 
-#define method(name, kind) {#name, dawgmeth_##name, kind, NULL}
-#define methoddoc(name, kind) {#name, dawgmeth_##name, kind, dawgmeth_##name##_doc}
+static
+PyMemberDef dawg_members[] = {
+	{
+		"state",
+		T_INT,
+		offsetof(DAWGclass, dawg) + offsetof(DAWG, state),
+		READONLY,
+		"current state of DAWG"
+	},
+
+	{NULL}
+};
+
+#define method(name, kind) {#name, dawgmeth_##name, kind, dawgmeth_##name##_doc}
 static
 PyMethodDef dawg_methods[] = {
 	method(add_word,			METH_O),
@@ -423,6 +497,7 @@ PyMethodDef dawg_methods[] = {
 	method(words,				METH_NOARGS),
 	method(clear,				METH_NOARGS),
 	method(close,				METH_NOARGS),
+	{"freeze", dawgmeth_close, METH_NOARGS, dawgmeth_close_doc},
 
 	method(get_stats,		METH_NOARGS),
 	method(dump,			METH_NOARGS),
@@ -461,7 +536,7 @@ PyTypeObject dawg_type = {
 	dawgmeth_iter,								/* tp_iter */
 	0,                                          /* tp_iternext */
 	dawg_methods,								/* tp_methods */
-	0,							                /* tp_members */
+	dawg_members,								/* tp_members */
 	0,                                          /* tp_getset */
 	0,                                          /* tp_base */
 	0,                                          /* tp_dict */

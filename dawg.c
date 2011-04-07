@@ -75,6 +75,9 @@ resize_hash(HashTable* hashtable) {
 
 int
 DAWG_add_word_unchecked(DAWG* dawg, String word) {
+	if (dawg->state == CLOSED)
+		return -3;
+
 	int ret = 1;
 	int i = 0;
 
@@ -136,6 +139,8 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	else
 		ret = 0; // existing word
 
+	dawg->state = ACTIVE;
+
 	// update longest_word
 	if (word.length > dawg->longest_word)
 		dawg->longest_word = word.length;
@@ -153,7 +158,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 
 	word.length	= 0;
 	word.chars	= NULL;
-	
+
 	return ret;
 }
 
@@ -164,6 +169,14 @@ DAWG_close(DAWG* dawg) {
 
 	if (dawg->q0) {
 		DAWG_replace_or_register(dawg, dawg->q0, dawg->prev_word, 0);
+		hashtable_destroy(&dawg->reg);
+		if (dawg->prev_word.chars) {
+			memfree(dawg->prev_word.chars);
+
+			dawg->prev_word.chars	= NULL;
+			dawg->prev_word.length	= 0;
+		}
+		dawg->state = CLOSED;
 		return 1;
 	}
 	else
@@ -300,6 +313,7 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
 }
 
 
+/* used by hashtable for registry */
 static uint32_t PURE
 dawgnode_hash(DAWGNode* p) {
 	/*
@@ -353,8 +367,11 @@ DAWG_clear(DAWG* dawg) {
 	dawg->count	= 0;
 	dawg->state	= EMPTY;
 	dawg->longest_word = 0;
-	
-	hashtable_clear(&dawg->reg);
+
+	if (dawg->reg.size == 0)
+		hashtable_init(&dawg->reg, 101);
+	else
+		hashtable_clear(&dawg->reg);
 
 	if (dawg->prev_word.chars) {
 		memfree(dawg->prev_word.chars);
@@ -453,6 +470,8 @@ DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats) {
 	stats->longest_word	= dawg->longest_word;
 	stats->sizeof_node	= sizeof(DAWGNode);
 	stats->graph_size	= 0;
+	stats->hash_tbl_size	= dawg->reg.size;
+	stats->hash_tbl_count	= dawg->reg.count;
 
 	DAWG_traverse_DFS_once(dawg, DAWG_get_stats_aux, stats);
 }

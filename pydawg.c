@@ -44,5 +44,11 @@ PyInit_pydawg(void) {
 	else
 		PyModule_AddObject(module, "DAWG", (PyObject*)&dawg_type);
 
+#define constant(name) PyModule_AddIntConstant(module, #name, name)
+	constant(EMPTY);
+	constant(ACTIVE);
+	constant(CLOSED);
+#undef constant
+
 	return module;
 }

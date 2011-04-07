@@ -21,11 +21,25 @@ version of ``pyDAWG``.
 Module
 ------
 
-Module ``pydawg`` provides class ``DAWG``.
+Module ``pydawg`` provides class ``DAWG`` and symbolic constants
+for class's ``state`` member.
 
 
 ``DAWG`` class
 --------------
+
+
+Members
+~~~~~~~
+
+``state`` [readonly integer]
+	Following property values are possible:
+
+	* ``pydawg.EMPTY`` --- no words in a set;
+	* ``pydawg.ACTIVE`` --- there is at least one word in a set,
+	  and adding new words is possible (see ``add_word`` & ``add_word_unchecked``);
+	* ``pydawg.CLOSED`` --- there is at least one word in a set,
+	  but adding new words is not allowed (see ``close``/``freeze``).
 
 
 Basic mathod
@@ -34,12 +48,12 @@ Basic mathod
 ``add_word(word) => bool``
 	Add word, returns True if word didn't exists in a set.
 	Procedure checks if ``word`` is greater then previously 
-	added word (in lexicography order). This force 
+	added word (in lexicography order).
 
 ``add_word_unchecked(word) => bool``
-	Does the same thing as ``add_word`` but do not check ``word``.
-	Method should be used if one is sure, that input data satisfy
-	algorithm requirements, i.e. words order is correct.
+	Does the same thing as ``add_word`` but do not check ``word``
+	order. Method should be used if one is sure, that input data
+	satisfy	algorithm requirements, i.e. words order is valid.
 
 ``exists(word) => bool`` or ``word in ...``
 	Check if word is in set.
@@ -57,17 +71,20 @@ Basic mathod
 	Returns list of all words.
 
 ``clear()``
-	Erase all words from a set.
+	Erase all words from set.
 
-``close()``
-	Don't allow to add any new words. Can be reverted only by ``clear()`` [???].
+``close()`` or ``freeze()``
+	Don't allow to add any new words. Also free some memory (a hash table)
+	used to perform incremental algorithm.
+
+	Can be reverted only by ``clear()``.
 
 
 Iterator
 ~~~~~~~~
 
 Class supports ``iter`` protocol, i.e. ``iter(DAWGobject)`` returns
-iterator. Iterator is a lazy version of ``words()`` method.
+iterator, a lazy version of ``words()`` method.
 
 
 Other
@@ -83,6 +100,8 @@ Other
 	* ``graph_size``	--- size of whole graph (in bytes); it's about
 	  ``nodes_count * node_size + edges_count * pointer size``
 	* ``longest_word``	--- length of the longest word
+	* ``hash_tbl_size``	--- size of a helper hash table
+	* ``hash_tbl_count`` --- number of items in a helper hash table
 
 
 ``dump() => (set of nodes, set of edges)``
