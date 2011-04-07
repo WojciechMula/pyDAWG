@@ -7,15 +7,19 @@ Introduction
 ------------
 
 ``PyDAWG`` python module implements :enwiki:`DAWG` graph structure, which
-allow to store set of strings and check existence of string in linear time.
+allow to store set of strings and check existence of a string in linear
+time (in terms of the string length).
 
-DAWG construction uses **incremental algorithm** by J.Duciuk and others.
-see: . (Visit for paper and presentations ). The only disadvantage of the
-algorithm is requirement to sort input words before adding them to DAWG.
+DAWG is constructed by **incremental algorithm** described in *Incremental
+algorithm for sorted data*, **Jan Daciuk**, **Stoyan Mihov**, **Bruce Watson**,
+and **Richard Watson**, Computational Linguistics, 26(1), March 2000.
+Prof. Jan Daciuk offers also some useful presentations on `his site`__.
 
-There is a variant of incremental algorithm (by the same authors) that
-do not have any assumption on input, but is not implemented in current
-version of ``pyDAWG``.
+__ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
+
+There are two versions of the algorithm, one require adding words in
+particular order (i.e. sorted), another hasn't got any assumptions about
+input. This module implements only first, constrained variant.
 
 
 Module
@@ -117,6 +121,11 @@ Other
 	* source node id
 	* edge label --- letter
 	* destination node id
+
+	Distribution contains program ``dump2dot.py`` that shows how to
+	convert output of this function to `graphviz`__ DOT language.
+
+	__ http://graphviz.org
 
 
 Changes

@@ -113,12 +113,10 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 			state
 		);
 
-		if (item)
-			memfree(item);
-
 		dawgnode_set_child(state, word.chars[i], new);
 
 		if (item) {
+			memfree(item);
 			resize_hash(&dawg->reg);
 			hashtable_add(
 				&dawg->reg,
@@ -227,7 +225,7 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 		while (reg) {
 			DAWGNode* r = reg->key;
 			ASSERT(r);
-			
+
 			if (dawgnode_equivalence(item->child, r)) {
 				ASSERT(dawgnode_get_child(item->parent, item->label) == item->child);
 
@@ -237,13 +235,11 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 										item->parent
 									);
 
-				if (prev)
-					memfree(prev);
-
 				dawgnode_set_child(item->parent, item->label, r);
 				dawgnode_free(item->child);
 
 				if (prev) {
+					memfree(prev);
 					resize_hash(&dawg->reg);
 					hashtable_add(
 						&dawg->reg,
