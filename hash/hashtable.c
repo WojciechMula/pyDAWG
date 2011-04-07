@@ -25,6 +25,7 @@ L(hashtable_resize)(L(HashTable)* hashtable, const size_t newsize) {
 	L(HashTable) new;
 	if (L(hashtable_init)(&new, newsize) == 0) {
 		L(HashListItem)* item;
+		L(HashListItem)* tmp;
 		size_t i;
 		for (i=0; i < hashtable->size; i++) {
 			item = hashtable->table[i];
@@ -34,7 +35,9 @@ L(hashtable_resize)(L(HashTable)* hashtable, const size_t newsize) {
 #else
 				L(hashtable_add)(&new, item->hash, item->key);
 #endif
+				tmp  = item;
 				item = item->next;
+				HASH_FREE(tmp);
 			}
 		}
 
