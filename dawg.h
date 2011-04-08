@@ -4,6 +4,19 @@
 #include "common.h"
 #include "dawgnode.h"
 
+#define	DAWG_OK 		(0)
+#define DAWG_NO_MEM		(-1)
+#define DAWG_WORD_LESS	(-2)
+#define DAWG_FROZEN		(-3)
+
+#define DAWG_DUMP_TRUNCATED			(-100)
+#define DAWG_DUMP_INVALID_MAGICK	(-101)
+#define DAWG_DUMP_INVALID_STATE		(-102)
+#define DAWG_DUMP_INVALID_ROOT_ID	(-103)
+#define DAWG_DUMP_CORRUPTED_1		(-104)
+#define DAWG_DUMP_CORRUPTED_2		(-105)
+
+
 static bool PURE
 dawgnode_equivalence(DAWGNode* p, DAWGNode* q);
 
@@ -11,6 +24,7 @@ static uint32_t PURE
 dawgnode_hash(DAWGNode* p);
 
 // setup hash table
+#include "hash/hashtable_undefall.h"
 
 #define	HASH_TYPE			uint32_t
 #define	HASH_KEY_TYPE		DAWGNode*
@@ -48,10 +62,15 @@ typedef struct DAWGStatistics {
 
 	size_t	sizeof_node;
 	size_t	graph_size;
-
-	size_t	hash_tbl_size;
-	size_t	hash_tbl_count;
 } DAWGStatistics;
+
+
+typedef struct DAWGHashStatistics {
+	size_t	table_size;
+	size_t	element_size;
+	size_t	items_count;
+	size_t	item_size;
+} DAWGHashStatistics;
 
 
 typedef struct DAWG {
@@ -105,7 +124,7 @@ static int
 DAWG_traverse_DFS(DAWG* dawg, DAWG_traverse_callback callback, void* extra);
 
 
-/* traverse in DFS order, nodes are visited exactly one
+/* traverse in DFS order, nodes are visited exactly once
    callback is called after visiting children
  */
 static int
@@ -115,6 +134,11 @@ DAWG_traverse_DFS_once(DAWG* dawg, DAWG_traverse_callback callback, void* extra)
 /* calculate some statistics */
 static void
 DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats);
+
+
+/* get some statistics about hash table */
+static void
+DAWG_get_hash_stats(DAWG* dawg, DAWGHashStatistics* stats);
 
 
 /* find word - returns longest prefix and last visited node */
@@ -130,6 +154,29 @@ DAWG_exists(DAWG* dawg, const uint8_t* word, const size_t wordlen);
 /* returns longest prefix of word that exists in a DAWG */
 static bool PURE
 DAWG_longest_prefix(DAWG* dawg, const uint8_t* word, const size_t wordlen);
+
+/**	Save DAWG in byte array.
+
+	@param[in]	dawg		DAWG object
+	@param[in]	stats		current statistics about DAWG
+
+	@param[out]	array		address of array containg DAWG,
+							array have to be freed manually
+	@param[out]	size		size of array
+
+	@returns
+		DAWG_OK
+		DAWG_NO_MEM
+*/
+static int
+DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size);
+
+
+/** Loads DAWG from data returned by DAWG_save.
+
+*/
+int
+DAWG_load(DAWG* dawg, void* array, size_t size);
 
 
 #endif

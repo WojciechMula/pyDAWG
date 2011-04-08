@@ -58,7 +58,7 @@ int
 DAWG_add_word(DAWG* dawg, String word) {
 	const int k = string_cmp(dawg->prev_word, word);
 	if (k > 0)
-		return -2;
+		return DAWG_WORD_LESS;
 	else
 		return DAWG_add_word_unchecked(dawg, word);
 }
@@ -76,7 +76,7 @@ resize_hash(HashTable* hashtable) {
 int
 DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	if (dawg->state == CLOSED)
-		return -3;
+		return DAWG_FROZEN;
 
 	int ret = 1;
 	int i = 0;
@@ -84,7 +84,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	if (dawg->q0 == NULL) {
 		dawg->q0 = dawgnode_new(0);
 		if (UNLIKELY(dawg->q0 == NULL))
-			return -1;
+			return DAWG_NO_MEM;
 	}
 	
 	DAWGNode* state = dawg->q0;
@@ -105,7 +105,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	while (i < word.length) {
 		DAWGNode* new = dawgnode_new(word.chars[i]);
 		if (new == NULL)
-			return -1;
+			return DAWG_NO_MEM;
 		
 		HashListItem* item = hashtable_del(
 			&dawg->reg,
@@ -150,7 +150,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	dawg->prev_word.length	= word.length;
 	dawg->prev_word.chars	= (char*)memalloc(word.length);
 	if (UNLIKELY(dawg->prev_word.chars == NULL))
-		return -1;
+		return DAWG_NO_MEM;
 	else
 		memcpy(dawg->prev_word.chars, word.chars, word.length);
 
@@ -466,10 +466,20 @@ DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats) {
 	stats->longest_word	= dawg->longest_word;
 	stats->sizeof_node	= sizeof(DAWGNode);
 	stats->graph_size	= 0;
-	stats->hash_tbl_size	= dawg->reg.size;
-	stats->hash_tbl_count	= dawg->reg.count;
 
 	DAWG_traverse_DFS_once(dawg, DAWG_get_stats_aux, stats);
+}
+
+
+static void 
+DAWG_get_hash_stats(DAWG* dawg, DAWGHashStatistics* stats) {
+	ASSERT(dawg);
+	ASSERT(stats);
+
+	stats->table_size	= dawg->reg.size;
+	stats->element_size	= sizeof(HashListItem*);
+	stats->items_count	= dawg->reg.count;
+	stats->item_size	= sizeof(HashListItem);
 }
 
 
@@ -514,3 +524,6 @@ static bool PURE
 DAWG_match(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
 	return DAWG_longest_prefix(dawg, word, wordlen) > 0;
 }
+
+
+#include "dawg_pickle.c"

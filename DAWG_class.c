@@ -3,7 +3,10 @@
 
 
 static
-PyTypeObject	dawg_type;
+PyTypeObject dawg_type;
+
+static PyObject*
+dawgmeth_binload(PyObject* self, PyObject* arg);
 
 
 PyObject*
@@ -17,6 +20,21 @@ dawgobj_new(PyTypeObject* type, PyObject* args, PyObject* kwargs) {
 	DAWG_init(&dawg->dawg);
 	dawg->version		= 0;
 	dawg->stats_version	= -1;	// stats are not valid
+
+	if (PyTuple_Check(args) and PyTuple_Size(args) > 0) {
+		if (PyTuple_Size(args) == 1) {
+			PyObject* ret = dawgmeth_binload((PyObject*)dawg, PyTuple_GET_ITEM(args, 0));
+			if (ret == NULL) {
+				Py_DECREF(dawg);
+				return NULL;
+			}
+		}
+		else {
+			PyErr_SetString(PyExc_ValueError, "constructor do not accept any arguments");
+			Py_DECREF(dawg);
+			return NULL;
+		}
+	}
 
 	return (PyObject*)dawg;
 }
@@ -74,22 +92,21 @@ dawgmeth_add_word(PyObject* self, PyObject* value) {
 		case 0:
 			Py_RETURN_FALSE;
 
-
-		case -3:
+		case DAWG_FROZEN:
 			PyErr_SetString(
 				PyExc_AttributeError,
 				"DAWG has been freezed, no further chanages are allowed"
 			);
 			return NULL;
 
-		case -2:
+		case DAWG_WORD_LESS:
 			PyErr_SetString(
 				PyExc_ValueError,
 				"word is less then previosuly added, can't update DAWG"
 			);
 			return NULL;
 
-		case -1:
+		case DAWG_NO_MEM:
 			PyErr_NoMemory();
 			return NULL;
 
@@ -127,14 +144,14 @@ dawgmeth_add_word_unchecked(PyObject* self, PyObject* value) {
 		case 0:
 			Py_RETURN_FALSE;
 
-		case -3:
+		case DAWG_FROZEN:
 			PyErr_SetString(
 				PyExc_AttributeError,
 				"DAWG has been freezed, no further chanages are allowed"
 			);
 			return NULL;
 
-		case -1:
+		case DAWG_NO_MEM:
 			PyErr_NoMemory();
 			return NULL;
 
@@ -285,26 +302,55 @@ dawgmeth_close(PyObject* self, PyObject* args) {
 	"* ``hash_tbl_size``	--- size of a helper hash table\n" \
 	"* ``hash_tbl_count`` --- number of items in a helper hash table"
 
+static void update_stats(DAWGclass *obj) {
+	if (obj->stats_version != obj->version) {
+		DAWG_get_stats(&obj->dawg, &obj->stats);
+		obj->stats_version = obj->version;
+	}
+}
+
+
 static PyObject*
 dawgmeth_get_stats(PyObject* self, PyObject* args) {
 #define obj ((DAWGclass*)self)
 #define dawg (obj->dawg)
-	if (obj->stats_version != obj->version) {
-		DAWG_get_stats(&dawg, &obj->stats);
-		obj->stats_version = obj->version;
-	}
+	update_stats(obj);
 
     PyObject* dict = Py_BuildValue(
-        "{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
+        "{s:i,s:i,s:i,s:i,s:i,s:i}",
 #define emit(name) #name, obj->stats.name
         emit(nodes_count),
         emit(edges_count),
         emit(words_count),
         emit(longest_word),
         emit(sizeof_node),
-        emit(graph_size),
-		emit(hash_tbl_size),
-		emit(hash_tbl_count)
+        emit(graph_size)
+#undef emit
+    );
+
+	return dict;
+#undef dawg
+#undef obj
+}
+
+
+#define dawgmeth_get_hash_stats_doc \
+	"Returns dict containing some info about hash table used by DAWG"
+
+static PyObject*
+dawgmeth_get_hash_stats(PyObject* self, PyObject* args) {
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
+	DAWGHashStatistics stats;
+	DAWG_get_hash_stats(&dawg, &stats);
+
+    PyObject* dict = Py_BuildValue(
+        "{s:i,s:i,s:i,s:i}",
+#define emit(name) #name, stats.name
+        emit(table_size),
+        emit(element_size),
+        emit(items_count),
+        emit(item_size)
 #undef emit
     );
 
@@ -377,9 +423,8 @@ dawgmeth_dump(PyObject* self, PyObject* args) {
 	DAWG_traverse_DFS(&dawg, dump_aux, &dump);
 	if (dump.error)
 		goto error;
-	else {
+	else
 		return Py_BuildValue("OO", dump.nodes, dump.edges);
-	}
 
 error:
 	Py_XDECREF(dump.nodes);
@@ -469,6 +514,144 @@ error:
 }
 
 
+#define dawgmeth_bindump_doc \
+	"Returns binary image of DAWG"
+
+static PyObject*
+dawgmeth_bindump(PyObject* self, PyObject* args) {
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
+	void* array;
+	size_t size;
+
+	PyObject* res;
+
+	update_stats(obj);
+
+	switch (DAWG_save(&dawg, &obj->stats, &array, &size)) {
+		case DAWG_OK:
+			res = PyBytes_FromStringAndSize(array, size);
+			memfree(array);
+			return res;
+
+		case DAWG_NO_MEM:
+			PyErr_NoMemory();
+			return NULL;
+
+		default:
+			memfree(array);
+			PyErr_SetString(PyExc_AssertionError, "internal error, function DAWG_save returned unexpected value");
+			return NULL;
+	}
+#undef dawg
+#undef obj
+}
+
+
+#define dawgmeth_binload_doc \
+	"Load DAWG with data returned by bindump"
+
+static PyObject*
+dawgmeth_binload(PyObject* self, PyObject* arg) {
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
+	if (not PyBytes_Check(arg)) {
+		PyErr_SetString(PyExc_TypeError, "bytes object expected");
+		return NULL;
+	}
+
+	void* array;
+	ssize_t size;
+
+	if (PyBytes_AsStringAndSize(arg, (char**)&array, &size) < 0)
+		return NULL;
+	else
+		Py_INCREF(arg);
+
+	const int ret = DAWG_load(&dawg, array, size);
+	Py_DECREF(arg);
+	switch (ret) {
+		case DAWG_OK:
+			obj->version = -1;
+			obj->stats_version = -2;
+
+			Py_RETURN_NONE;
+
+		case DAWG_NO_MEM:
+			PyErr_NoMemory();
+			return NULL;
+
+		case DAWG_DUMP_TRUNCATED:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"input data truncated"
+			);
+			return NULL;
+
+		case DAWG_DUMP_INVALID_MAGICK:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"input data invalid: header corrupted - bad magick"
+			);
+			return NULL;
+
+		case DAWG_DUMP_INVALID_STATE:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"input data invalid: header corrupted - invalid DAWG state"
+			);
+			return NULL;
+
+		case DAWG_DUMP_INVALID_ROOT_ID:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"input data invalid: header corrupted - invalid root node id"
+			);
+			return NULL;
+
+		case DAWG_DUMP_CORRUPTED_1:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"input data invalid: missing nodes"
+			);
+			return NULL;
+
+		case DAWG_DUMP_CORRUPTED_2:
+			PyErr_SetString(
+				PyExc_ValueError,
+				"input data invalid: invalid index"
+			);
+			return NULL;
+
+		default:
+			PyErr_SetString(PyExc_AssertionError, "internal error, function DAWG_load returned unexpected value");
+			return NULL;
+	}
+#undef obj
+#undef dawg
+}
+
+
+#define dawgmeth___reduce___doc \
+	"reduce protocol"
+
+static PyObject*
+dawgmeth___reduce__(PyObject* self, PyObject* args) {
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
+	// return pair: type, bytes
+	PyObject* bytes;
+
+	bytes = dawgmeth_bindump(self, NULL);
+	if (bytes)
+		return Py_BuildValue("O(O)", Py_TYPE(self), bytes);
+	else
+		return NULL;
+#undef obj
+#undef dawg
+}
+
+
 
 static
 PySequenceMethods dawg_as_sequence;
@@ -486,6 +669,7 @@ PyMemberDef dawg_members[] = {
 	{NULL}
 };
 
+
 #define method(name, kind) {#name, dawgmeth_##name, kind, dawgmeth_##name##_doc}
 static
 PyMethodDef dawg_methods[] = {
@@ -497,10 +681,15 @@ PyMethodDef dawg_methods[] = {
 	method(words,				METH_NOARGS),
 	method(clear,				METH_NOARGS),
 	method(close,				METH_NOARGS),
-	{"freeze", dawgmeth_close, METH_NOARGS, dawgmeth_close_doc},
+	{"freeze", dawgmeth_close, METH_NOARGS, dawgmeth_close_doc},	// alias
 
-	method(get_stats,		METH_NOARGS),
-	method(dump,			METH_NOARGS),
+	method(bindump,				METH_NOARGS),
+	method(binload,				METH_O),
+	method(__reduce__,			METH_NOARGS),
+
+	method(get_stats,			METH_NOARGS),
+	method(get_hash_stats,		METH_NOARGS),
+	method(dump,				METH_NOARGS),
 
 	{NULL, NULL, 0, NULL}
 };

@@ -1,7 +1,7 @@
 import unittest
 import pydawg
 
-class TestDAWG(unittest.TestCase):
+class TestDAWGBase(unittest.TestCase):
 	def setUp(self):
 		self.D = pydawg.DAWG();
 		self.words = b"cat rat attribute tribute war warbute zaaa".split()
@@ -12,7 +12,8 @@ class TestDAWG(unittest.TestCase):
 
 		return self.D
 
-	
+
+class TestDAWG(TestDAWGBase):
 	def test_add_word(self):
 		D  = self.D
 		w1 = b"cat"
@@ -137,7 +138,63 @@ class TestDAWG(unittest.TestCase):
 
 	def test_get_stats(self):
 		D = self.add_test_words()
-		#print(self.D.get_stats())
+		print(self.D.get_stats())
+	
+	
+	def test_get_hash_stats(self):
+		D = self.add_test_words()
+		print(self.D.get_hash_stats())
+
+
+class TestDumpLoad(TestDAWGBase):
+	def test_dump(self):
+		D = self.add_test_words();
+		#print(D.bindump())
+
+
+	def test_load(self):
+		D = self.add_test_words()
+		L = D.words()
+		Ls = D.get_stats()
+
+		dump = D.bindump()
+		D.clear()
+		D.binload(dump)
+		N = D.words()
+		Ns = D.get_stats()
+		self.assertEqual(L, N)
+		self.assertEqual(Ls, Ns)
+		
+		D.add_word(b"zip")
+		D.add_word(b"zzza")
+	
+
+	def test_load_empty(self):
+		D = self.D
+		L = D.words()
+		Ls = D.get_stats()
+
+		dump = D.bindump()
+		D.binload(dump)
+		N = D.words()
+		Ns = D.get_stats()
+		self.assertEqual(L, N)
+		self.assertEqual(Ls, Ns)
+
+		D.add_word(b"zip")
+		D.add_word(b"zzza")
+
+
+class TestPickle(TestDAWGBase):
+	def test_pickle_unpickle(self):
+		import pickle
+
+		D = self.add_test_words()
+		dump = pickle.dumps(D)
+
+		N = pickle.loads(dump)
+		self.assertEqual(len(N), len(D))
+		self.assertEqual(N.words(), D.words())
 
 
 if __name__ == '__main__':
