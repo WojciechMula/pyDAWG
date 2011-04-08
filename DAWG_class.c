@@ -317,13 +317,14 @@ dawgmeth_get_stats(PyObject* self, PyObject* args) {
 	update_stats(obj);
 
     PyObject* dict = Py_BuildValue(
-        "{s:i,s:i,s:i,s:i,s:i,s:i}",
+        "{s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
 #define emit(name) #name, obj->stats.name
         emit(nodes_count),
         emit(edges_count),
         emit(words_count),
         emit(longest_word),
         emit(sizeof_node),
+        emit(sizeof_edge),
         emit(graph_size)
 #undef emit
     );

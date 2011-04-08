@@ -465,6 +465,7 @@ DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats) {
 	stats->words_count	= dawg->count;
 	stats->longest_word	= dawg->longest_word;
 	stats->sizeof_node	= sizeof(DAWGNode);
+	stats->sizeof_edge	= sizeof(DAWGEdge);
 	stats->graph_size	= 0;
 
 	DAWG_traverse_DFS_once(dawg, DAWG_get_stats_aux, stats);

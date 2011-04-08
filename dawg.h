@@ -61,6 +61,7 @@ typedef struct DAWGStatistics {
 	size_t	longest_word;
 
 	size_t	sizeof_node;
+	size_t	sizeof_edge;
 	size_t	graph_size;
 } DAWGStatistics;
 

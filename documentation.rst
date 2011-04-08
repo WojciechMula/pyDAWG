@@ -139,13 +139,14 @@ Other
 	Returns dictionary containing some statistics about
 	underlaying data structure:
 
+	* ``words_count``	--- number of distinct words (same as ``len(dawg)``)
+	* ``longest_word``	--- length of the longest word
 	* ``nodes_count``	--- number of nodes
 	* ``edges_count``	--- number of edges
-	* ``words_count``	--- number of distinct words (same as ``len(dawg)``)
-	* ``node_size``		--- size of single node (in bytes)
+	* ``sizeof_node``	--- size of single node (in bytes)
+	* ``sizeof_edge``	--- size of single node (in bytes)
 	* ``graph_size``	--- size of whole graph (in bytes); it's about
-	  ``nodes_count * node_size + edges_count * pointer size``
-	* ``longest_word``	--- length of the longest word
+	  ``nodes_count * node_size + edges_count * edge_size``
 
 ``get_hash_stats() => dict``
 	Returns some statistics about hash table used by DAWG.
