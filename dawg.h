@@ -18,6 +18,8 @@
 #include "dawgnode.h"
 
 #define	DAWG_OK 		(0)
+#define DAWG_EXISTS		(1)
+#define DAWG_NOT_EXISTS	(0)
 #define DAWG_NO_MEM		(-1)
 #define DAWG_WORD_LESS	(-2)
 #define DAWG_FROZEN		(-3)
@@ -205,8 +207,46 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size);
 		DAWG_DUMP_CORRUPTED_1
 		DAWG_DUMP_CORRUPTED_2
 */
-int
+static int
 DAWG_load(DAWG* dawg, void* array, size_t size);
+
+
+#ifdef DAWG_PERFECT_HASHING
+/*
+	Count and save number of words reachable from each state
+	This is required by DAWG_mph_get_word_index() and
+	DAWG_mph_get_word_from_index().
+*/
+static void
+DAWG_mph_numerate_nodes(DAWG* dawg);
+
+
+/*
+	Returns unique index of a word. Index is in a range
+	(1 .. dawg->count) or 0 if word isn't not present in
+	a dictionary.
+
+	DAWG_mph_numerate_nodes() have to called once before
+	call this function!
+*/
+static int
+DAWG_mph_word2index(DAWG* dawg, const uint8_t* word, const size_t wordlen);
+
+
+/*
+	Returns word that have index (1 .. dawg->count).
+	If word exists, then returns DAWG_EXISTS and fills
+	'word' and 'wordlen'. Array 'word' have to freed
+	manually.
+
+	Otherwise returns DAWG_NOT_EXISTS.
+
+	DAWG_mph_numerate_nodes() have to called once before
+	call this function!
+*/
+static int
+DAWG_mph_index2word(DAWG* dawg, int index, uint8_t** word, size_t* wordlen);
+#endif
 
 
 #endif

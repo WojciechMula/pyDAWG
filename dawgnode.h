@@ -25,11 +25,13 @@ typedef struct DAWGEdge {
 
 
 typedef struct DAWGNode {
-	int					n;			///< number of outcoming edges
+	uint16_t			n;			///< number of outcoming edges
 	DAWGEdge*			next;		///< outcoming edges - always sorted by letter
 	uint16_t			visited;	///< visited (field used while traversing a graph)
 	bool				eow;		///< End-Of-Word marker
-	
+#ifdef DAWG_PERFECT_HASHING
+	int					number;		///< number of words reachable from this state
+#endif
 } DAWGNode;
 
 

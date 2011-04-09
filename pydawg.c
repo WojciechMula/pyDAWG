@@ -63,5 +63,11 @@ PyInit_pydawg(void) {
 	constant(CLOSED);
 #undef constant
 
+#ifdef DAWG_PERFECT_HASHING
+	PyModule_AddIntConstant(module, "perfect_hasing", 1);
+#else
+	PyModule_AddIntConstant(module, "perfect_hasing", 0);
+#endif
+
 	return module;
 }

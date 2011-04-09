@@ -23,6 +23,9 @@ typedef struct DAWGclass {
 	DAWG dawg;		///< DAWG data
 
 	int	version;	///< version
+#ifdef DAWG_PERFECT_HASHING
+	int mph_version;		///< version of perfect hashing numbering
+#endif
 	int stats_version;		///< version for statistics
 	DAWGStatistics stats;	///< statistics
 } DAWGclass;

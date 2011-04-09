@@ -21,7 +21,10 @@ dawgnode_new(const uint8_t letter) {
 		new->n		= 0;
 		new->next	= NULL;
 		new->eow	= false;
-		new->visited	= 0;
+		new->visited = 0;
+#ifdef DAWG_PERFECT_HASHING
+		new->number = 0;
+#endif
 	}
 
 	return new;

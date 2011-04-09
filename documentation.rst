@@ -19,14 +19,19 @@ and **Richard Watson**, Computational Linguistics, 26(1), March 2000.
 Prof. Jan Daciuk offers also some useful documentation, presentations and
 even sample code on `his site`__.
 
+This algorithm asserts that input words are **sorted** in
+:enwiki:`lexicographic order`; Python's ``sort()`` sorts strings
+in this way.
+
 __ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
 
 
 Module
 ------
 
-Module ``pydawg`` provides class ``DAWG`` and symbolic constants
-for class's ``state`` member.
+Module ``pydawg`` provides class ``DAWG``, symbolic constants
+for class's ``state`` member (``EMPTY``, ``ACTIVE``, ``CLOSED``)
+and member ``perfect_hashing`` (see `Minimal perfect hashing`_).
 
 
 ``DAWG`` class
@@ -92,8 +97,44 @@ Basic mathods
 
 Iterator
 ~~~~~~~~
+
 Class supports ``iter`` protocol, i.e. ``iter(DAWGobject)`` returns
 iterator, a lazy version of ``words()`` method.
+
+
+Minimal perfect hashing
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Minimal :enwiki:`perfect hashing` (MPH) allows to find unique number
+representing any word from DAWG, and also find word with given number.
+Numbers are in always in range 1 ... ``len(DAWG)``.
+
+Finally, this feature makes possible to perform fast lookups as
+in a regular dictionary.
+
+Algorithm used for MPH is described in *Applications of Finite Automata
+Representing Large Vocabularies*, **Claudio Lucchiesi** and **Tomasz
+Kowaltowski**, Software Practice and Experience, 23(1), pp. 15--30, Jan.
+1993.
+
+MPH feature is enabled during compilation time if preprocessor
+definition ``DAWG_PERFECT_HASHING`` exists. Module member
+``perfect_hashing`` reflects this setting.
+
+
+.. warning::
+	Words numbering is done for the whole DAWG. If new words
+	are added with ``add_word`` and ``add_word_unchecked``,
+	then current numbering is lost and next call of ``word2index``
+	or ``index2word`` will renumber DAWG again. Frequent
+	mixing these two groups of method will degrade performance.
+
+
+``word2index(word) => index``
+	Returns index of word, or None if word is not present in a DAWG.
+
+``index2word(index) => word``
+	Returns words associated with index, or None if index isn't valid.
 
 
 Other

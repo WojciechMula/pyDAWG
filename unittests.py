@@ -18,7 +18,7 @@ class TestDAWG(TestDAWGBase):
 		D  = self.D
 		w1 = b"cat"
 		D.add_word(w1)
-		D.add_word(w1)	# adding same word again is ok
+		D.add_word(w1)	# adding the same word again is ok
 
 		w2 = b"catalog"
 		D.add_word(w2)	# ok 'catalog' > 'cat'
@@ -106,7 +106,7 @@ class TestDAWG(TestDAWGBase):
 		for word in prefixes:
 			self.assertEqual(D.longest_prefix(word), len(word))
 
-		self.assertEqual(D.longest_prefix(b"rating"), 3)
+		self.assertEqual(D.longest_prefix(b"rating"), 3)	# "rat"
 		self.assertEqual(D.longest_prefix(b""), 0)
 		self.assertEqual(D.longest_prefix(b"y"), 0)
 
@@ -195,6 +195,64 @@ class TestPickle(TestDAWGBase):
 		N = pickle.loads(dump)
 		self.assertEqual(len(N), len(D))
 		self.assertEqual(N.words(), D.words())
+
+
+class TestMPH(TestDAWGBase):
+	def test_word2index(self):
+		if pydawg.perfect_hasing:
+			D = self.D
+			# empty
+			for word in self.words:
+				index = D.word2index(word)
+				self.assertEqual(index, None)
+
+			D = self.add_test_words()
+
+			S = set()
+			for word in self.words:
+				index = D.word2index(word)
+				S.add(index)
+
+			# distinct numbers
+			self.assertEqual(len(S), len(D))
+
+			# indexes in range 1..len(D)
+			self.assertEqual(min(S), 1)
+			self.assertEqual(max(S), len(D))
+
+			# inexising words
+			index = D.word2index(b"xyz")
+			self.assertEqual(index, None)
+			index = D.word2index(b"")
+			self.assertEqual(index, None)
+
+
+	def test_index2word(self):
+		if pydawg.perfect_hasing:
+			D = self.D
+
+			for i in range(-50, 50):
+				word = D.index2word(i)
+				self.assertEqual(word, None)
+		
+			D = self.add_test_words()
+
+			def test(new_words=[]):
+				S = set()
+				for i in range(1, len(D) + 1):
+					word = D.index2word(i)
+					S.add(word)
+
+				self.assertEqual(S, set(self.words + new_words))
+
+			# test 1st set
+			test()
+
+			word = b"zebra"
+			D.add_word(word)
+
+			# test 2nd set, after adding a word
+			test([word])
 
 
 if __name__ == '__main__':

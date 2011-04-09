@@ -34,6 +34,9 @@ dawgobj_new(PyTypeObject* type, PyObject* args, PyObject* kwargs) {
 	DAWG_init(&dawg->dawg);
 	dawg->version		= 0;
 	dawg->stats_version	= -1;	// stats are not valid
+#ifdef DAWG_PERFECT_HASHING
+	dawg->mph_version	= -1;	// numbers are not valid
+#endif
 
 	if (PyTuple_Check(args) and PyTuple_Size(args) > 0) {
 		if (PyTuple_Size(args) == 1) {
@@ -589,6 +592,9 @@ dawgmeth_binload(PyObject* self, PyObject* arg) {
 		case DAWG_OK:
 			obj->version = -1;
 			obj->stats_version = -2;
+#ifdef DAWG_PERFECT_HASHING
+			obj->mph_version = -2;
+#endif
 
 			Py_RETURN_NONE;
 
@@ -667,6 +673,98 @@ dawgmeth___reduce__(PyObject* self, PyObject* args) {
 }
 
 
+#ifdef DAWG_PERFECT_HASHING
+
+#define dawgmeth_word2index_doc \
+	"word2index(word) => integer\n" \
+	"Returns unique integer in range 1..len() identifies a word." \
+	"If word is not present in DAWG, returns None"
+
+static PyObject*
+dawgmeth_word2index(PyObject* self, PyObject* arg) {
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
+	String word;
+	PyObject* bytes;
+
+	bytes = get_string(arg, &word);
+	if (bytes == NULL)
+		return NULL;
+
+	if (obj->mph_version != obj->version) {
+		DAWG_mph_numerate_nodes(&dawg);
+		obj->mph_version = obj->version;
+	}
+
+	const int result = DAWG_mph_word2index(
+							&dawg,
+							(const uint8_t*)word.chars,
+							(size_t)word.length
+						);
+	Py_DECREF(bytes);
+
+	switch (result) {
+		case DAWG_NOT_EXISTS:
+			Py_RETURN_NONE;
+
+		default:
+			return Py_BuildValue("i", result);
+	}
+#undef obj
+#undef dawg
+}
+
+#define dawgmeth_index2word_doc \
+	"index2word(integer) => bytes\n" \
+	"Returns word identified by given integer."
+
+
+static PyObject*
+dawgmeth_index2word(PyObject* self, PyObject* arg) {
+#define obj ((DAWGclass*)self)
+#define dawg (obj->dawg)
+	Py_ssize_t index;
+
+	index = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
+	if (index == -1 and PyErr_Occurred())
+		return NULL;
+
+	if (obj->mph_version != obj->version) {
+		DAWG_mph_numerate_nodes(&dawg);
+		obj->mph_version = obj->version;
+	}
+	
+	uint8_t* word;
+	size_t wordlen;
+
+	const int result = DAWG_mph_index2word(&dawg, index, &word, &wordlen);
+	switch (result) {
+		case DAWG_NOT_EXISTS:
+			Py_RETURN_NONE;
+
+		case DAWG_NO_MEM:
+			PyErr_NoMemory();
+			return NULL;
+
+		case DAWG_EXISTS:
+			{
+			PyObject* bytes;
+
+			bytes = PyBytes_FromStringAndSize((const char*)word, (ssize_t)wordlen);
+			memfree(word);
+			return bytes;
+			}
+
+		default:
+			ASSERT(0);
+	}
+
+#undef obj
+#undef dawg
+}
+#endif
+
+
 
 static
 PySequenceMethods dawg_as_sequence;
@@ -697,6 +795,11 @@ PyMethodDef dawg_methods[] = {
 	method(clear,				METH_NOARGS),
 	method(close,				METH_NOARGS),
 	{"freeze", dawgmeth_close, METH_NOARGS, dawgmeth_close_doc},	// alias
+
+#ifdef DAWG_PERFECT_HASHING
+	method(word2index,			METH_O),
+	method(index2word,			METH_O),
+#endif
 
 	method(bindump,				METH_NOARGS),
 	method(binload,				METH_O),

@@ -531,3 +531,4 @@ DAWG_match(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
 
 
 #include "dawg_pickle.c"
+#include "dawg_mph.c"
