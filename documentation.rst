@@ -2,6 +2,9 @@
                                pyDAWG
 ========================================================================
 
+:Author:	Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+:Date:		$Date$
+
 
 Introduction
 ------------
@@ -18,10 +21,6 @@ even sample code on `his site`__.
 
 __ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
 
-There are two versions of the algorithm, one require adding words in
-particular order (i.e. sorted), another hasn't got any assumptions about
-input. This module implements only first, constrained variant.
-
 
 Module
 ------
@@ -34,7 +33,7 @@ for class's ``state`` member.
 --------------
 
 ``DAWG`` class is picklable__, and also provide independent
-way of marshaling with methods ``binload()`` and ``binstore()``.
+way of marshaling with methods ``binload()`` and ``bindump()``.
 
 __ http://docs.python.org/py3k/library/pickle.html
 
@@ -160,7 +159,10 @@ Other
 	``table_size * element_size + items_count * item_size``.
 
 
-Changes
+License
 -------
 
-*none*
+Library is licensed under very liberal three-clauses BSD license.
+Some portions has been released into public domain.
+
+Full text of license is available in LICENSE file.
