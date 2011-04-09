@@ -1,3 +1,19 @@
+/*
+	This is part of pydawg Python module.
+
+	Hash table template body.
+
+	See hashtable_test.c and hashtable_setup.h for example
+	how to setup parameters.
+
+	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : Public domain
+	Date      : $Date$
+
+	$Id$
+*/
+
 #include "hashtable.h"
 
 #define L HASHNAME
@@ -23,6 +39,7 @@ L(hashtable_init)(L(HashTable)* hashtable, const size_t size) {
 }
 
 
+#ifndef HASH_RESIZE_UNUSED
 HASH_STATIC int
 L(hashtable_resize)(L(HashTable)* hashtable, const size_t newsize) {
 	L(HashTable) new;
@@ -33,20 +50,17 @@ L(hashtable_resize)(L(HashTable)* hashtable, const size_t newsize) {
 		for (i=0; i < hashtable->size; i++) {
 			item = hashtable->table[i];
 			while (item) {
-#ifdef HASH_DATA_TYPE
-				L(hashtable_add)(&new, item->hash, item->key, item->data);
-#else
-				L(hashtable_add)(&new, item->hash, item->key);
-#endif
-				tmp  = item;
-				item = item->next;
-				HASH_FREE(tmp);
+				tmp = item->next;
+				const size_t idx = (item->hash % newsize);
+				item->next = new.table[idx];
+				new.table[idx] = item;
+
+				item = tmp;
 			}
 		}
 
 		HASH_FREE(hashtable->table);
 		hashtable->table	= new.table;
-		hashtable->count	= new.count;
 		hashtable->size		= new.size;
 		hashtable->count_threshold = new.count_threshold;
 		return 0;
@@ -54,8 +68,10 @@ L(hashtable_resize)(L(HashTable)* hashtable, const size_t newsize) {
 	else
 		return -1;
 }
+#endif
 
 
+#ifndef HASH_CLEAR_UNUSED
 HASH_STATIC int
 L(hashtable_clear)(L(HashTable)* hashtable) {
 	size_t i;
@@ -74,8 +90,10 @@ L(hashtable_clear)(L(HashTable)* hashtable) {
 	hashtable->count = 0;
 	return 0;
 }
+#endif
 
 
+#ifndef HASH_DESTROY_UNUSED
 HASH_STATIC int
 L(hashtable_destroy)(L(HashTable)* hashtable) {
 	if (hashtable) {
@@ -88,21 +106,24 @@ L(hashtable_destroy)(L(HashTable)* hashtable) {
 	else
 		return -1;
 }
+#endif
 
 
+#ifndef HASH_GET_LIST_UNUSED
 HASH_STATIC L(HashListItem)*
 L(hashtable_get_list)(L(HashTable)* hashtable, const HASH_TYPE hash) {
 	return hashtable->table[hash % hashtable->size];
 }
-
+#endif
 
 HASH_STATIC int
 #ifdef HASH_DATA_TYPE
-L(hashtable_add)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_TYPE key, const HASH_DATA_TYPE data)
+L(hashtable_add)(L(HashTable)* hashtable, const HASH_KEY_TYPE key, const HASH_DATA_TYPE data)
 #else
-L(hashtable_add)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_TYPE key)
+L(hashtable_add)(L(HashTable)* hashtable, const HASH_KEY_TYPE key)
 #endif
 {
+	const HASH_TYPE hash = HASH_GET_HASH(key);
 	const size_t index = hash % hashtable->size;
 	L(HashListItem)* item = (L(HashListItem)*)HASH_ALLOC(sizeof(L(HashListItem)));
 	if (item) {
@@ -128,8 +149,10 @@ L(hashtable_add)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_T
 }
 
 
+#ifndef HASH_GET_UNUSED
 HASH_STATIC L(HashListItem)*
-L(hashtable_get)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_TYPE key) {
+L(hashtable_get)(L(HashTable)* hashtable, const HASH_KEY_TYPE key) {
+	const HASH_TYPE hash = HASH_GET_HASH(key);
 	const size_t index = hash % hashtable->size;
 	L(HashListItem)* item = hashtable->table[index];
 
@@ -141,10 +164,13 @@ L(hashtable_get)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_T
 
 	return item;
 }
+#endif
 
 
+#ifndef HASH_DEL_UNUSED
 HASH_STATIC L(HashListItem*)
-L(hashtable_del)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_TYPE key) {
+L(hashtable_del)(L(HashTable)* hashtable, const HASH_KEY_TYPE key) {
+	const HASH_TYPE hash = HASH_GET_HASH(key);
 	const size_t index = hash % hashtable->size;
 	L(HashListItem)* item = hashtable->table[index];
 	L(HashListItem)* prev;
@@ -179,6 +205,6 @@ L(hashtable_del)(L(HashTable)* hashtable, const HASH_TYPE hash, const HASH_KEY_T
 
 	return NULL;
 }
-
+#endif
 
 #undef L

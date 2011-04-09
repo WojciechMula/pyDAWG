@@ -1,3 +1,17 @@
+/*
+	This is part of pydawg Python module.
+
+	Procedures to serialize/deserialize DAWG.
+	This file is included directly in dawg.c.
+
+	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : 3-clauses BSD (see LICENSE)
+	Date      : $Date$
+
+	$Id$
+*/
+
 // hashtable type
 #include "hash/hashtable_undefall.h"
 
@@ -10,6 +24,9 @@
 #define	HASH_ALLOC		memalloc
 #define HASH_FREE		memfree
 #define HASHNAME(name) addr_##name
+
+#define HASH_GET_LIST_UNUSED
+#define HASH_DEL_UNUSED
 
 #include "hash/hashtable.c"
 // hashtable type
@@ -37,7 +54,7 @@ save_fill_address_table(DAWGNode* node, const size_t depth, void* extra) {
 		}
 	}
 
-	addr_hashtable_add(&hashtable, HASH_GET_HASH(node), node, self->id++);
+	addr_hashtable_add(&hashtable, node, self->id++);
 	return 1;
 #undef hashtable
 #undef self
@@ -89,7 +106,7 @@ save_node(DAWGNode* node, const uint32_t node_id, void* array, addr_HashTable* a
 	for (i=0; i < node->n; i++) {
 
 		child = node->next[i].child;
-		item = addr_hashtable_get(addr, HASH_GET_HASH(child), child);
+		item = addr_hashtable_get(addr, child);
 		ASSERT(item);
 		
 		save_1byte(node->next[i].letter);
@@ -139,7 +156,7 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size) {
 	save_4bytes(dawg->longest_word);
 	if (dawg->state != EMPTY) {
 		addr_HashListItem* item;
-		item = addr_hashtable_get(&rec.LUT, HASH_GET_HASH(dawg->q0), dawg->q0);
+		item = addr_hashtable_get(&rec.LUT, dawg->q0);
 		ASSERT(item);
 		save_4bytes(item->data);
 	}
@@ -333,12 +350,7 @@ DAWG_load(DAWG* dawg, void* array, size_t size) {
 		// recreate registry lookup table
 		for (i=0; i < nodes_count; i++) {
 			DAWGNode* node = id2node[i];
-			hashtable_add(
-				&dawg->reg,
-				HASH_GET_HASH(node),
-				node
-			);
-
+			hashtable_add(&dawg->reg, node);
 			resize_hash(&dawg->reg);
 		}
 	}

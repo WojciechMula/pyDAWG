@@ -1,3 +1,17 @@
+/*
+	This is part of pydawg Python module.
+
+	Definition of Python class DAWG.
+	(wrapper for functions from dawg/dawgnode.{c,h})
+
+	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : 3-clauses BSD (see LICENSE)
+	Date      : $Date$
+
+	$Id$
+*/
+
 #include "DAWG_class.h"
 #include "DAWGIterator_class.h"
 

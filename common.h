@@ -1,5 +1,5 @@
 /*
-	This is part of pyahocorasick Python module.
+	This is part of pydawg Python module.
 	
 	common definitions and includes
 

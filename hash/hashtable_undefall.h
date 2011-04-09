@@ -33,3 +33,28 @@
 #ifdef HASHNAME
 #	undef HASHNAME
 #endif
+
+#ifdef HASH_RESIZE_UNUSED
+#	undef HASH_RESIZE_UNUSED
+#endif
+
+#ifdef HASH_DESTROY_UNUSED
+#	undef HASH_DESTROY_UNUSED
+#endif
+
+#ifdef HASH_CLEAR_UNUSED
+#	undef HASH_CLEAR_UNUSED
+#endif
+
+#ifdef HASH_GET_LIST_UNUSED
+#	undef HASH_GET_LIST_UNUSED
+#endif
+
+#ifdef HASH_GET_UNUSED
+#	undef HASH_GET_UNUSED
+#endif
+
+#ifdef HASH_DEL_UNUSED
+#	undef HASH_DEL_UNUSED
+#endif
+

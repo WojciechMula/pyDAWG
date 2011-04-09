@@ -1,3 +1,17 @@
+/*
+	This is part of pydawg Python module.
+
+	Declaration of python class DAWG iterator.
+
+	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : 3-clauses BSD (see LICENSE)
+	License   : Public domain
+	Date      : $Date$
+
+	$Id$
+*/
+
 #ifndef pydawg_DAWGIterator_class_h_included__
 #define pydawg_DAWGIterator_class_h_included__
 
@@ -9,11 +23,11 @@
 typedef struct DAWGIterator {
 	PyObject_HEAD
 
-	DAWGclass*	dawg;
-	int			version;
-	DAWGNode*	state;
-	List		stack;
-	char*		buffer;
+	DAWGclass*	dawg;		///< DAWG
+	int			version;	///< DAWG version, used to invalidate iterator when DAWG has chanbed
+	DAWGNode*	state;		///< current node
+	List		stack;		///< stack
+	char*		buffer;		///< string buffer
 
 } DAWGIterator;
 

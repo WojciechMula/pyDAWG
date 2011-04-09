@@ -1,3 +1,16 @@
+/*
+	This is part of pydawg Python module.
+
+	DAWG header -- basic operataions on graph.
+
+	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : 3-clauses BSD (see LICENSE)
+	Date      : $Date$
+
+	$Id$
+*/
+
 #ifndef dawg_h_included__
 #define dawg_h_included__
 
@@ -21,7 +34,7 @@ static bool PURE
 dawgnode_equivalence(DAWGNode* p, DAWGNode* q);
 
 static uint32_t PURE
-dawgnode_hash(DAWGNode* p);
+dawgnode_hash(const DAWGNode* p);
 
 // setup hash table
 #include "hash/hashtable_undefall.h"
@@ -35,6 +48,8 @@ dawgnode_hash(DAWGNode* p);
 #define	HASH_ALLOC	malloc
 #define	HASH_FREE	free
 
+#define HASH_GET_UNUSED
+
 #define HASHNAME(name)	name
 #include "hash/hashtable.c"
 
@@ -42,8 +57,8 @@ dawgnode_hash(DAWGNode* p);
 
 
 typedef struct String {
-	ssize_t	length;
-	char*	chars;
+	ssize_t	length;		///< length of string
+	char*	chars;		///< array of chars
 } String;
 
 
@@ -110,7 +125,7 @@ static int
 DAWG_clear(DAWG* dawg);
 
 
-/* minimize remaining states and do not allow to add new words */
+/* minimize remaining states and then do not allow to add new words */
 static int
 DAWG_close(DAWG* dawg);
 
@@ -132,7 +147,7 @@ static int
 DAWG_traverse_DFS_once(DAWG* dawg, DAWG_traverse_callback callback, void* extra);
 
 
-/* calculate some statistics */
+/* calculate some graph statistics */
 static void
 DAWG_get_stats(DAWG* dawg, DAWGStatistics* stats);
 
@@ -156,6 +171,7 @@ DAWG_exists(DAWG* dawg, const uint8_t* word, const size_t wordlen);
 static bool PURE
 DAWG_longest_prefix(DAWG* dawg, const uint8_t* word, const size_t wordlen);
 
+
 /**	Save DAWG in byte array.
 
 	@param[in]	dawg		DAWG object
@@ -175,6 +191,19 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size);
 
 /** Loads DAWG from data returned by DAWG_save.
 
+	@param[in,out]	dawg		DAWG object
+	@param[in]		array		data
+	@param[in]		size		data size
+
+	@returns
+		DAWG_OK
+		DAWG_NO_MEM
+		DAWG_DUMP_TRUNCATED
+		DAWG_DUMP_INVALID_MAGICK
+		DAWG_DUMP_INVALID_STATE
+		DAWG_DUMP_INVALID_ROOT_ID
+		DAWG_DUMP_CORRUPTED_1
+		DAWG_DUMP_CORRUPTED_2
 */
 int
 DAWG_load(DAWG* dawg, void* array, size_t size);

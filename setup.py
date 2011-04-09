@@ -6,7 +6,7 @@ module1 = Extension(
 	depends = [
 		'DAWG_class.c', 'DAWG_class.h',
 		'DAWGIterator_class.c', 'DAWGIterator_class.h',
-		'dawg.c', 'dawg.h',
+		'dawg.c', 'dawg.h', 'dawg_pickle.c',
 		'dawgnode.c', 'dawgcode.h',
 		'slist.h', 'slist.c',
 		'utils.c',

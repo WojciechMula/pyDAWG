@@ -1,3 +1,17 @@
+"""
+	This is part of pydawg Python module.
+
+	Pure python implementation.
+
+	Author    : Wojciech Muła, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : Public domain
+	Date      : $Date$
+
+	$Id$
+"""
+
+
 class DAWGNode:
 	def __init__(self, char):
 		self.children = {}
@@ -34,14 +48,17 @@ def equivalence(p, q):
 	if s != set(q.children):
 		return False
 
-	if 0:
-		for c in s:
-			if not equivalence(p.children[c], q.children[c]):
+	"""
+	# exact definition of equivalence
+	for c in s:
+		if not equivalence(p.children[c], q.children[c]):
 				return False
-	else:
-		for c in s:
-			if p.children[c] != q.children[c]:
-				return False
+	"""
+	# pratical implementation - constraints make
+	# this much simpler and faster
+	for c in s:
+		if p.children[c] != q.children[c]:
+			return False
 
 	return True
 
@@ -53,7 +70,6 @@ class DAWG:
 		self.wp = ''
 
 	def add_word(self, word):
-		print(self.wp, word)
 		# 1. skip existing
 		i = 0;
 		s = self.q0
@@ -63,9 +79,8 @@ class DAWG:
 
 		assert s != None
 
-		# 2. correct graph
+		# 2. minimize
 		if i < len(self.wp):
-			#self.repl_or_reg(s.get_next(self.wp[i]), self.wp[i+1:])
 			self.repl_or_reg(s, self.wp[i:])
 
 
@@ -109,36 +124,11 @@ class DAWG:
 				self.register.add(state)
 			
 
-
-		"""
-		assert(state != None)
-		if suffix:
-			node = self.repl_or_reg(state.get_next(suffix[0]), suffix[1:])
-			state.set_next(suffix[0], node)
-
-		for r in self.register:
-			if equivalence(state, r):
-				parent = state.parent
-				assert(parent)
-				assert(parent.children[state.char] == state)
-				del parent.children[state.char]
-				parent.children[state.char] = r
-
-				return r
-
-		self.register.add(state)
-		return state
-		"""
-
-
-	def finish(self):
+	def freeze(self):
 		self.repl_or_reg(self.q0, self.wp)
 
 
 	def as_dot(self, file):
-
-		def writeln(text=""):
-			file.write(text + "\n")
 
 		nodes = set()
 		edges = []
@@ -147,7 +137,6 @@ class DAWG:
 		def aux(node):
 			nodes.add((id(node), node.final))
 			tmp.add(node)
-			print(node)
 
 			for letter, child in node.children.items():
 				aux(child)
@@ -159,8 +148,7 @@ class DAWG:
 				edges.append((id(node), letter, id(child)))
 
 		import dump2dot
-		with open('1.dot', 'wt') as f:
-			dump2dot.dumpdata2dot(nodes, edges, f)
+		dump2dot.dumpdata2dot(nodes, edges, file)
 
 
 	def words(self):
@@ -198,7 +186,7 @@ def main():
 		D.add_word(word)
 		#dump()
 
-	D.finish()
+	D.freeze()
 	name = dump()
 	os.system("dotty %s" % name)
 

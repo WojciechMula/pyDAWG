@@ -12,7 +12,10 @@ def dumpdata2dot(nodes, edges, file):
 
 	
 	for srcid, char, dstid in edges:
-		writeln("node%d -> node%d [label=\"%c\"]" % (srcid, dstid, str(char, "ascii")))
+		if type(char) == bytes:
+			char = str(char, "ascii")
+
+		writeln("node%d -> node%d [label=\"%c\"]" % (srcid, dstid, char))
 
 	writeln("}");
 

@@ -1,3 +1,22 @@
+/*
+	This is part of pydawg Python module.
+
+	Implementation of DAWG procedures.
+	Algorithm used to construct minimized DAWG comes from
+
+	"Incremental algorithm for sorted data", Jan Daciuk,
+	Stoyan Mihov, Bruce Watson, and Richard Watson,
+	Computational Linguistics, 26(1), March 2000.
+
+
+	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	WWW       : http://0x80.pl/proj/pydawg/
+	License   : 3-clauses BSD (see LICENSE)
+	Date      : $Date$
+
+	$Id$
+*/
+
 #include "dawg.h"
 #include <string.h>
 
@@ -107,22 +126,14 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 		if (new == NULL)
 			return DAWG_NO_MEM;
 		
-		HashListItem* item = hashtable_del(
-			&dawg->reg,
-			HASH_GET_HASH(state),
-			state
-		);
+		HashListItem* item = hashtable_del(&dawg->reg, state);
 
 		dawgnode_set_child(state, word.chars[i], new);
 
 		if (item) {
 			memfree(item);
 			resize_hash(&dawg->reg);
-			hashtable_add(
-				&dawg->reg,
-				HASH_GET_HASH(state),
-				state
-			);
+			hashtable_add(&dawg->reg, state);
 		}
 
 		state = new;
@@ -229,11 +240,7 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 			if (dawgnode_equivalence(item->child, r)) {
 				ASSERT(dawgnode_get_child(item->parent, item->label) == item->child);
 
-				HashListItem* prev = hashtable_del(
-										&dawg->reg,
-										HASH_GET_HASH(item->parent),
-										item->parent
-									);
+				HashListItem* prev = hashtable_del(&dawg->reg, item->parent);
 
 				dawgnode_set_child(item->parent, item->label, r);
 				dawgnode_free(item->child);
@@ -241,11 +248,7 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 				if (prev) {
 					memfree(prev);
 					resize_hash(&dawg->reg);
-					hashtable_add(
-						&dawg->reg,
-						HASH_GET_HASH(item->parent),
-						item->parent
-					);
+					hashtable_add(&dawg->reg, item->parent);
 				}
 
 				replaced = true;
@@ -258,11 +261,7 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 		// 2) register new unique state
 		if (not replaced) {
 			resize_hash(&dawg->reg);
-			hashtable_add(
-				&dawg->reg,
-				HASH_GET_HASH(item->child),
-				item->child
-			);
+			hashtable_add(&dawg->reg, item->child);
 		}
 
 		list_item_delete((ListItem*)item);
@@ -296,7 +295,8 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
 	size_t n = p->n;
 	size_t i;
 	for (i=0; i < n; i++) {
-		// nodes are always sorted, so side-by-side compare is possible
+		// outcoming edges are always sorted by letter,
+		// so side-by-side comparison is possible
 
 		if (p->next[i].letter != q->next[i].letter)
 			return false;
@@ -309,12 +309,15 @@ dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
 }
 
 
-/* used by hashtable for registry */
+/*
+	used by hashtable for registry
+	FNV hash (http://isthe.com/chongo/tech/comp/fnv/)
+*/
 static uint32_t PURE
-dawgnode_hash(DAWGNode* p) {
+dawgnode_hash(const DAWGNode* p) {
 	/*
 		hash is calulated from following components:
-		- eow marker
+		- end-of-word marker
 		- outgoing link count
 		- link labels
 		- address of link destinations
