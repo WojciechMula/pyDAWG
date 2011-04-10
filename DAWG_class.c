@@ -68,14 +68,12 @@ dawgobj_del(PyObject* self) {
 
 static PyObject*
 get_string(PyObject* value, String* string) {
-	bool unicode;
 	PyObject* obj;
 
 	obj = pymod_get_string(
 			value,
 			&string->chars,
-			&string->length,
-			&unicode
+			&string->length
 	);
 
 	return obj;
@@ -190,7 +188,7 @@ dawgmeth_contains(PyObject* self, PyObject* value) {
 	if (obj == NULL)
 		return -1;
 
-	const int ret = DAWG_exists(&dawg, (uint8_t*)word.chars, word.length);
+	const int ret = DAWG_exists(&dawg, word.chars, word.length);
 	Py_DECREF(obj);
 	return ret;
 #undef dawg
@@ -228,7 +226,7 @@ dawgmeth_match(PyObject* self, PyObject* value) {
 	if (obj == NULL)
 		return NULL;
 
-	const int ret = DAWG_match(&dawg, (uint8_t*)word.chars, word.length);
+	const int ret = DAWG_match(&dawg, word.chars, word.length);
 	Py_DECREF(obj);
 
 	if (ret)
@@ -258,7 +256,7 @@ dawgmeth_longest_prefix(PyObject* self, PyObject* value) {
 	if (obj == NULL)
 		return NULL;
 
-	size_t len = DAWG_longest_prefix(&dawg, (uint8_t*)word.chars, word.length);
+	const size_t len = DAWG_longest_prefix(&dawg, word.chars, word.length);
 	Py_DECREF(obj);
 
 	return Py_BuildValue("i", len);
@@ -453,25 +451,29 @@ error:
 
 
 typedef struct WordsAux {
-	PyObject*	list;
-	char*		buffer;
-	bool		error;
+	PyObject* list;
+	DAWG_LETTER_TYPE* buffer;
+	bool error;
 } WordsAux;
 
 
 static int
 words_aux(DAWGNode* node, const size_t depth, WordsAux* words) {
-	PyObject* bytes;
+	PyObject* item;
 	DAWGNode* child;
 	int i;
 
 	if (node->eow) {
-		bytes = PyBytes_FromStringAndSize(words->buffer, depth);
-		if (bytes == NULL) {
+#ifdef DAWG_UNICODE
+		item = PyUnicode_FromUnicode(words->buffer, depth);
+#else
+		item = PyBytes_FromStringAndSize((char*)words->buffer, depth);
+#endif
+		if (item == NULL) {
 			words->error = true;
 			return 0;
 		}
-		else if (PyList_Append(words->list, bytes) < 0) {
+		else if (PyList_Append(words->list, item) < 0) {
 			words->error = true;
 			return 0;
 		}
@@ -501,7 +503,7 @@ dawgmeth_words(PyObject* self, PyObject* args) {
 	words.buffer	= NULL;
 	words.list		= NULL;
 
-	words.buffer = (char*)memalloc(dawg.longest_word + 1);
+	words.buffer = (DAWG_LETTER_TYPE*)memalloc((dawg.longest_word + 1) * DAWG_LETTER_SIZE);
 	if (words.buffer == NULL) {
 		PyErr_NoMemory();
 		goto error;
@@ -698,7 +700,7 @@ dawgmeth_word2index(PyObject* self, PyObject* arg) {
 
 	const int result = DAWG_mph_word2index(
 							&dawg,
-							(const uint8_t*)word.chars,
+							word.chars,
 							(size_t)word.length
 						);
 	Py_DECREF(bytes);
@@ -714,10 +716,10 @@ dawgmeth_word2index(PyObject* self, PyObject* arg) {
 #undef dawg
 }
 
-#define dawgmeth_index2word_doc \
-	"index2word(integer) => bytes\n" \
-	"Returns word identified by given integer."
 
+#define dawgmeth_index2word_doc \
+	"index2word(integer) => string\n" \
+	"Returns word identified by given integer."
 
 static PyObject*
 dawgmeth_index2word(PyObject* self, PyObject* arg) {
@@ -734,7 +736,7 @@ dawgmeth_index2word(PyObject* self, PyObject* arg) {
 		obj->mph_version = obj->version;
 	}
 	
-	uint8_t* word;
+	DAWG_LETTER_TYPE* word;
 	size_t wordlen;
 
 	const int result = DAWG_mph_index2word(&dawg, index, &word, &wordlen);
@@ -748,11 +750,14 @@ dawgmeth_index2word(PyObject* self, PyObject* arg) {
 
 		case DAWG_EXISTS:
 			{
-			PyObject* bytes;
-
-			bytes = PyBytes_FromStringAndSize((const char*)word, (ssize_t)wordlen);
+			PyObject* result;
+#ifdef DAWG_UNICODE
+			result = PyUnicode_FromUnicode(word, wordlen);
+#else
+			result = PyBytes_FromStringAndSize((const char*)word, (ssize_t)wordlen);
+#endif
 			memfree(word);
-			return bytes;
+			return result;
 			}
 
 		default:

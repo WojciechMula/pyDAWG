@@ -2,6 +2,8 @@
 	This is part of pydawg Python module.
 
 	Implementation of functions related to minmal perfect hashing.
+	This file is included directly in dawg.c.
+
 	Algorithm is described in:
 	
 	"Applications of Finite Automata Representing Large Vocabularies",
@@ -35,7 +37,7 @@ DAWG_mph_numerate_nodes(DAWG* dawg) {
 
 
 static int
-DAWG_mph_word2index(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
+DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
 	int index = 0;
 
 	size_t i, j;
@@ -44,7 +46,7 @@ DAWG_mph_word2index(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
 
 	state = dawg->q0;
 	for (i = 0; i < wordlen; i++) {
-		const uint8_t c = word[i];
+		const DAWG_LETTER_TYPE c = word[i];
 		next = dawgnode_get_child(state, c);
 		if (next) {
 			for (j=0; j < state->n; j++)
@@ -64,13 +66,13 @@ DAWG_mph_word2index(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
 
 
 static int
-DAWG_mph_index2word(DAWG* dawg, int index, uint8_t** word, size_t* wordlen) {
+DAWG_mph_index2word(DAWG* dawg, int index, DAWG_LETTER_TYPE** word, size_t* wordlen) {
 	ASSERT(dawg);
 	if (index < 1 or index > dawg->count)
 		return DAWG_NOT_EXISTS;
 
 	*wordlen = 0;
-	*word = (uint8_t*)memalloc(dawg->longest_word + 1);
+	*word = (DAWG_LETTER_TYPE*)memalloc((dawg->longest_word + 1) * DAWG_LETTER_SIZE);
 	if (*word == NULL)
 		return DAWG_NO_MEM;
 

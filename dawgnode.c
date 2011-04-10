@@ -15,7 +15,7 @@
 
 
 DAWGNode*
-dawgnode_new(const uint8_t letter) {
+dawgnode_new(const DAWG_LETTER_TYPE letter) {
 	DAWGNode* new = (DAWGNode*)memalloc(sizeof(DAWGNode));
 	if (new) {
 		new->n		= 0;
@@ -43,13 +43,13 @@ dawgnode_free(DAWGNode* node) {
 
 
 bool PURE
-dawgnode_has_child(DAWGNode* node, const uint8_t byte) {
-	return (dawgnode_get_child(node, byte) != NULL);
+dawgnode_has_child(DAWGNode* node, const DAWG_LETTER_TYPE letter) {
+	return (dawgnode_get_child(node, letter) != NULL);
 }
 
 
 static int PURE
-dawgnode_get_child_idx(DAWGNode* node, const uint8_t byte) {
+dawgnode_get_child_idx(DAWGNode* node, const DAWG_LETTER_TYPE letter) {
 	if (node and node->next) {
 		// binary search
 		int a = 0;
@@ -58,9 +58,9 @@ dawgnode_get_child_idx(DAWGNode* node, const uint8_t byte) {
 
 		while (a <= b) {
 			c = (a + b)/2;
-			if (node->next[c].letter == byte)
+			if (node->next[c].letter == letter)
 				return c;
-			else if (node->next[c].letter > byte)
+			else if (node->next[c].letter > letter)
 				b = c - 1;
 			else
 				a = c + 1;
@@ -72,8 +72,8 @@ dawgnode_get_child_idx(DAWGNode* node, const uint8_t byte) {
 
 
 DAWGNode* PURE
-dawgnode_get_child(DAWGNode* node, const uint8_t byte) {
-	const int idx = dawgnode_get_child_idx(node, byte);
+dawgnode_get_child(DAWGNode* node, const DAWG_LETTER_TYPE letter) {
+	const int idx = dawgnode_get_child_idx(node, letter);
 	if (idx >= 0)
 		return node->next[idx].child;
 	else
@@ -82,10 +82,10 @@ dawgnode_get_child(DAWGNode* node, const uint8_t byte) {
 
 
 DAWGNode*
-dawgnode_set_child(DAWGNode* node, const uint8_t byte, DAWGNode* child) {
+dawgnode_set_child(DAWGNode* node, const DAWG_LETTER_TYPE letter, DAWGNode* child) {
 	ASSERT(node);
 	if (node->next) {
-		int idx = dawgnode_get_child_idx(node, byte);
+		int idx = dawgnode_get_child_idx(node, letter);
 		if (idx >= 0) {
 			// replace
 			node->next[idx].child = child;
@@ -101,10 +101,10 @@ dawgnode_set_child(DAWGNode* node, const uint8_t byte, DAWGNode* child) {
 
 	size_t i, j;
 	i = j = 0;
-	while (i < node->n and node->next[i].letter < byte)
+	while (i < node->n and node->next[i].letter < letter)
 		newnext[j++] = node->next[i++];
 
-	newnext[j].letter = byte;
+	newnext[j].letter = letter;
 	newnext[j].child = child;
 	j += 1;
 
@@ -117,7 +117,7 @@ dawgnode_set_child(DAWGNode* node, const uint8_t byte, DAWGNode* child) {
 	node->next = newnext;
 	node->n += 1;
 
-	ASSERT(dawgnode_get_child_idx(node, byte) >= 0);
+	ASSERT(dawgnode_get_child_idx(node, letter) >= 0);
 	return child;
 }
 

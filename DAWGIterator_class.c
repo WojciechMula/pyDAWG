@@ -21,8 +21,8 @@ typedef struct DAWGIteratorStackItem {
 	LISTITEM_data
 
 	struct	DAWGNode*	node;
-	uint8_t	letter;
 	size_t	depth;
+	DAWG_LETTER_TYPE letter;
 } DAWGIteratorStackItem;
 
 #define StackItem DAWGIteratorStackItem
@@ -49,7 +49,7 @@ DAWGIterator_new(DAWGclass* dawg) {
 		return NULL;
 	}
 
-	iter->buffer = memalloc(dawg->dawg.longest_word);
+	iter->buffer = (DAWG_LETTER_TYPE*)memalloc((dawg->dawg.longest_word + 1) * DAWG_LETTER_SIZE);
 	if (iter->buffer == NULL) {
 		PyObject_Del((PyObject*)iter);
 		return NULL;
@@ -118,7 +118,11 @@ DAWGIterator_next(PyObject* self) {
 		iter->buffer[item->depth] = item->letter;
 
 		if (iter->state->eow)
-			return PyBytes_FromStringAndSize(iter->buffer + 1, item->depth);
+#ifdef DAWG_UNICODE
+			return PyUnicode_FromUnicode(iter->buffer + 1, item->depth);
+#else
+			return PyBytes_FromStringAndSize((char*)(iter->buffer + 1), item->depth);
+#endif
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
-	This is part of pyahocorasick Python module.
+	This is part of pydawg Python module.
 	
 	Helpers functions.
 	This file is included directly.
@@ -15,24 +15,29 @@
 
 /* returns bytes or unicode internal buffer */
 static PyObject*
-pymod_get_string(PyObject* obj, char** word, ssize_t* wordlen, bool* unicode) {
-	if (PyBytes_Check(obj)) {
-		*word = (char*)PyBytes_AS_STRING(obj);
-		*wordlen = PyBytes_GET_SIZE(obj);
-		Py_INCREF(obj);
-		*unicode = false;
-		return obj;
-	}
-	else if (PyUnicode_Check(obj)) {
-		*word = (char*)PyUnicode_AS_UNICODE(obj);
+pymod_get_string(PyObject* obj, DAWG_LETTER_TYPE** word, ssize_t* wordlen) {
+#ifdef DAWG_UNICODE
+	if (PyUnicode_Check(obj)) {
+		*word = (DAWG_LETTER_TYPE*)PyUnicode_AS_UNICODE(obj);
 		*wordlen = PyUnicode_GET_SIZE(obj);
 		Py_INCREF(obj);
-		*unicode = true;
 		return obj;
 	}
 	else {
-		PyErr_SetString(PyExc_ValueError, "string or bytes object expected");
+		PyErr_SetString(PyExc_TypeError, "string expected");
 		return NULL;
 	}
+#else
+	if (PyBytes_Check(obj)) {
+		*word = (uint8_t*)PyBytes_AS_STRING(obj);
+		*wordlen = PyBytes_GET_SIZE(obj);
+		Py_INCREF(obj);
+		return obj;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError, "bytes expected");
+		return NULL;
+	}
+#endif
 }
 

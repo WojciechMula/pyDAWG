@@ -1,7 +1,17 @@
 pydawg module installation
 ==========================
 
-Just run
+Compile time settings (can be change in setup.py):
+
+* ``DAWG_UNICODE`` --- if defined, DAWG accepts and returns
+  unicode strings, else bytes are supported
+
+* ``DAWG_PERFECT_HASHING`` --- when defined, minimal perfect
+  hashing is enabled (methods word2index and index2word are
+  available)
+
+
+Just run::
 
 		$ python setup.py install
 

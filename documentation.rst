@@ -19,9 +19,9 @@ and **Richard Watson**, Computational Linguistics, 26(1), March 2000.
 Prof. Jan Daciuk offers also some useful documentation, presentations and
 even sample code on `his site`__.
 
-This algorithm asserts that input words are **sorted** in
-:enwiki:`lexicographic order`; Python's ``sort()`` sorts strings
-in this way.
+The algorithm asserts that input words are **sorted** in
+:enwiki:`lexicographic order`; default Python ``sort()``
+orders strings correctly.
 
 __ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
 
@@ -29,9 +29,12 @@ __ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
 Module
 ------
 
-Module ``pydawg`` provides class ``DAWG``, symbolic constants
-for class's ``state`` member (``EMPTY``, ``ACTIVE``, ``CLOSED``)
-and member ``perfect_hashing`` (see `Minimal perfect hashing`_).
+Module ``pydawg`` provides class ``DAWG`` and following members:
+
+* ``EMPTY``, ``ACTIVE``, ``CLOSED`` --- symbolic constants for
+  ``state`` member of ``DAWG`` object
+* ``perfect_hashing`` -- see `Minimal perfect hashing`_
+* ``unicode`` -- see `Unicode and bytes`_
 
 
 ``DAWG`` class
@@ -46,7 +49,7 @@ __ http://docs.python.org/py3k/library/pickle.html
 Property
 ~~~~~~~~
 
-``state`` [readonly integer]
+``state`` [read-only integer]
 	Following property values are possible:
 
 	* ``pydawg.EMPTY`` --- no words in a set;
@@ -124,10 +127,12 @@ definition ``DAWG_PERFECT_HASHING`` exists. Module member
 
 .. warning::
 	Words numbering is done for the whole DAWG. If new words
-	are added with ``add_word`` and ``add_word_unchecked``,
-	then current numbering is lost and next call of ``word2index``
-	or ``index2word`` will renumber DAWG again. Frequent
-	mixing these two groups of method will degrade performance.
+	are added with ``add_word`` or ``add_word_unchecked``,
+	then current numbering is lost and when method ``word2index``
+	or ``index2word`` is called, then DAWG is renumbered.
+	
+	Because of that frequent mixing these two groups of method
+	will degrade performance.
 
 
 ``word2index(word) => index``
@@ -135,6 +140,34 @@ definition ``DAWG_PERFECT_HASHING`` exists. Module member
 
 ``index2word(index) => word``
 	Returns words associated with index, or None if index isn't valid.
+
+
+Example
+#######
+
+::
+
+	D = pydawg.DAWG()
+
+	# fill DAWG with keys
+	for key in sorted(dict):
+		D.add_word_unchecked(key)
+
+	# prepare values array
+	V = [None] * len(D)
+
+	for key, value in dict.items():
+		index = D.word2index(key)
+		assert index is not None
+
+		V[index - 1] = value
+		
+	
+	# lookups are possible now
+	for word in user_input:
+		index = D.word2index(word)
+		if index is not None:
+			print(word, "=>", V[index - 1])
 
 
 Other
@@ -186,7 +219,7 @@ Other
 	* ``sizeof_node``	--- size of single node (in bytes)
 	* ``sizeof_edge``	--- size of single node (in bytes)
 	* ``graph_size``	--- size of whole graph (in bytes); it's about
-	  ``nodes_count * node_size + edges_count * edge_size``
+	  ``nodes_count * sizeof_node + edges_count * sizeof_edge``
 
 ``get_hash_stats() => dict``
 	Returns some statistics about hash table used by DAWG.
@@ -198,6 +231,15 @@ Other
 
 	Approx memory occupied by hash table is
 	``table_size * element_size + items_count * item_size``.
+
+
+Unicode and bytes
+-----------------
+
+Type of strings accepted and returned by ``DAWG`` methods can be
+either **unicode** or **bytes**, depending on compile time
+settings (preprocessor definition ``DAWG_UNICODE``). Value of
+module member ``unicode`` informs about chosen type.
 
 
 License

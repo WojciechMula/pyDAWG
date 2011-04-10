@@ -19,6 +19,25 @@
 
 #include <iso646.h>
 
+// setup supported character set
+#ifdef DAWG_UNICODE
+#	ifdef Py_UNICODE_WIDE
+		// Python use UCS-4
+#		define DAWG_LETTER_TYPE	Py_UNICODE
+#		define DAWG_LETTER_SIZE 4
+#	else
+		// Python use UCS-2
+#		define DAWG_LETTER_TYPE	Py_UNICODE
+#		define DAWG_LETTER_SIZE 2
+#	endif
+#else
+	// only bytes are supported
+#	define DAWG_LETTER_TYPE	uint8_t
+#	define DAWG_LETTER_SIZE 1
+#endif
+
+
+
 #define memalloc	PyMem_Malloc
 #define memfree		PyMem_Free
 #define memrealloc	PyMem_Realloc

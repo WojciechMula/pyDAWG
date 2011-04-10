@@ -3,7 +3,10 @@ from distutils.core import setup, Extension
 module1 = Extension(
 	'pydawg',
 	sources = ['pydawg.c'],
-	define_macros = [('DAWG_PERFECT_HASHING', '')],
+	define_macros = [
+		('DAWG_PERFECT_HASHING', ''),	# enable perfect hashing
+		('DAWG_UNICODE', ''),			# use unicode
+	],
 	depends = [
 		'DAWG_class.c', 'DAWG_class.h',
 		'DAWGIterator_class.c', 'DAWGIterator_class.h',

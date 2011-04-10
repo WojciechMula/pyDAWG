@@ -15,9 +15,9 @@
 // hashtable type
 #include "hash/hashtable_undefall.h"
 
-#define HASH_TYPE		uintptr_t
+#define HASH_TYPE		uint32_t
 #define HASH_KEY_TYPE	DAWGNode*
-#define HASH_DATA_TYPE	uint32_t
+#define HASH_DATA_TYPE	uintptr_t
 #define HASH_EQ_FUN(a, b)	((a) == (b))
 #define HASH_GET_HASH(x)	(uintptr_t)(x)	// simple casting
 #define HASH_STATIC		static
@@ -64,7 +64,7 @@ save_fill_address_table(DAWGNode* node, const size_t depth, void* extra) {
 /*
 	Format of data:
 
-	- magick		: 4 bytes = 0xda32
+	- magick		: 4 bytes
 	- state			: 1 byte
 	- nodes count	: 4 bytes
 	- words count	: 4 bytes
@@ -77,14 +77,19 @@ save_fill_address_table(DAWGNode* node, const size_t depth, void* extra) {
 	- eow			: 1 byte
 	- n				: 4 bytes
 	- array[n]
-		- letter	: 1 byte
+		- letter	: 1, 2 or 4 byte(s)
 		- node id	: 4 bytes
 */
 
 #define DUMP_HEADER_SIZE (1 + 5*4)
 #define DUMP_NODE_SIZE (1 + 2*4)
-#define DUMP_EDGE_SIZE (1 + 4)
-#define DUMP_MAGICK	(0xda32)
+#define DUMP_EDGE_SIZE (DAWG_LETTER_SIZE + 4)
+
+#ifdef DAWG_UNICODE
+#	define 	DUMP_MAGICK	(0xda32)
+#else
+#	define 	DUMP_MAGICK	(0xdb32)
+#endif
 
 
 static int
@@ -93,8 +98,9 @@ save_node(DAWGNode* node, const uint32_t node_id, void* array, addr_HashTable* a
 	addr_HashListItem* item;
 	DAWGNode* child;
 
-#define save_4bytes(x) *(uint32_t*)(array + saved) = (x); saved += 4;
 #define save_1byte(x) *(uint8_t*)(array + saved) = (x); saved += 1;
+#define save_2bytes(x) *(uint16_t*)(array + saved) = (x); saved += 2;
+#define save_4bytes(x) *(uint32_t*)(array + saved) = (x); saved += 4;
 
 	// save node
 	save_4bytes(node_id);
@@ -108,13 +114,20 @@ save_node(DAWGNode* node, const uint32_t node_id, void* array, addr_HashTable* a
 		child = node->next[i].child;
 		item = addr_hashtable_get(addr, child);
 		ASSERT(item);
-		
+
+#if DAWG_LETTER_SIZE == 1
 		save_1byte(node->next[i].letter);
+#elif DAWG_LETTER_SIZE == 2
+		save_2bytes(node->next[i].letter);
+#else
+		save_4bytes(node->next[i].letter);
+#endif
 		save_4bytes(item->data);
 	}
 
 	return saved;
 #undef save_4bytes
+#undef save_2bytes
 #undef save_1byte
 }
 
@@ -138,7 +151,7 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size) {
 	if (rec.array == NULL)
 		return DAWG_NO_MEM;
 
-	// make lookup table: node address => sequentail number
+	// make lookup table: node address => sequential number
 	DAWG_traverse_DFS_once(dawg, save_fill_address_table, &rec);
 	if (rec.error) {
 		memfree(rec.array);
@@ -205,6 +218,7 @@ load_node(void* array, DAWGNode** _node, DAWGNode** id2node) {
 	id2node[id] = node;
 
 #define get_1byte (loaded += 1, (*(uint8_t*)(array + loaded - 1)))
+#define get_2bytes (loaded += 2, (*(uint16_t*)(array + loaded - 2)))
 #define get_4bytes (loaded += 4, (*(uint32_t*)(array + loaded - 4)))
 
 	// load node data
@@ -221,8 +235,15 @@ load_node(void* array, DAWGNode** _node, DAWGNode** id2node) {
 
 		size_t i;
 		for (i=0; i < node->n; i++) {
-			node->next[i].letter	= get_1byte;
-			node->next[i].child		= (DAWGNode*)(get_4bytes);
+#if DAWG_LETTER_SIZE == 1
+			node->next[i].letter = get_1byte;
+#elif DAWG_LETTER_SIZE == 2
+			node->next[i].letter = get_2bytes;
+#else
+			node->next[i].letter = get_4bytes;
+#endif
+
+			node->next[i].child = (DAWGNode*)(get_4bytes);
 		}
 	}
 	else
@@ -232,6 +253,7 @@ load_node(void* array, DAWGNode** _node, DAWGNode** id2node) {
 	return loaded;
 
 #undef get_1byte
+#undef get_2bytes
 #undef get_4bytes
 }
 

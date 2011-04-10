@@ -57,10 +57,10 @@ string_cmp(const String s1, const String s2) {
 	size_t i;
 	size_t n = s1.length < s2.length ? s1.length : s2.length;
 	for (i=0; i < n; i++) {
-		if ((unsigned char)s1.chars[i] < (unsigned char)s2.chars[i])
+		if (s1.chars[i] < s2.chars[i])
 			return -1;
 		else
-		if ((unsigned char)s1.chars[i] > (unsigned char)s2.chars[i])
+		if (s1.chars[i] > s2.chars[i])
 			return +1;
 	}
 
@@ -159,11 +159,11 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 		free(dawg->prev_word.chars);
 
 	dawg->prev_word.length	= word.length;
-	dawg->prev_word.chars	= (char*)memalloc(word.length);
+	dawg->prev_word.chars	= (DAWG_LETTER_TYPE*)memalloc(word.length * DAWG_LETTER_SIZE);
 	if (UNLIKELY(dawg->prev_word.chars == NULL))
 		return DAWG_NO_MEM;
 	else
-		memcpy(dawg->prev_word.chars, word.chars, word.length);
+		memcpy(dawg->prev_word.chars, word.chars, word.length * DAWG_LETTER_SIZE);
 
 	word.length	= 0;
 	word.chars	= NULL;
@@ -200,7 +200,7 @@ typedef struct StackItem {
 
 	DAWGNode*	parent;	///< parent node
 	DAWGNode*	child;	///< child node
-	uint8_t		label;	///< edge label
+	DAWG_LETTER_TYPE label;	///< edge label
 } StackItem;
 
 
@@ -334,14 +334,35 @@ dawgnode_hash(const DAWGNode* p) {
 
 	size_t i;
 	for (i=0; i < p->n; i++) {
+#define byte0(x) ((x) & 0xff)
+#define byte1(x) (((x) >> 8) & 0xff)
+#define byte2(x) (((x) >> 16) & 0xff)
+#define byte3(x) (((x) >> 24) & 0xff)
+
+#if DAWG_LETTER_SIZE == 1
 		FNV_step(p->next[i].letter);
+#elif DAWG_LETTER_SIZE == 2
+		FNV_step(byte0(p->next[i].letter));
+		FNV_step(byte1(p->next[i].letter));
+#else
+		FNV_step(byte0(p->next[i].letter));
+		FNV_step(byte1(p->next[i].letter));
+		FNV_step(byte2(p->next[i].letter));
+		FNV_step(byte3(p->next[i].letter));
+#endif
+
 
 		const uint32_t ptr = (uint32_t)(p->next[i].child);
-		FNV_step(ptr & 0xff);
-		FNV_step((ptr >> 8) & 0xff);
-		FNV_step((ptr >> 16) & 0xff);
-		FNV_step((ptr >> 24) & 0xff);
+		FNV_step(byte0(ptr));
+		FNV_step(byte1(ptr));
+		FNV_step(byte2(ptr));
+		FNV_step(byte3(ptr));
 	}
+
+#undef byte0
+#undef byte1
+#undef byte2
+#undef byte3
 	
 #undef FNV_step
 	return hash;
@@ -489,7 +510,7 @@ DAWG_get_hash_stats(DAWG* dawg, DAWGHashStatistics* stats) {
 
 
 static size_t PURE
-DAWG_find(DAWG* dawg, const uint8_t* word, const size_t wordlen, DAWGNode** result) {
+DAWG_find(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen, DAWGNode** result) {
 	ASSERT(dawg);
 
 	DAWGNode* node = dawg->q0;
@@ -508,7 +529,7 @@ DAWG_find(DAWG* dawg, const uint8_t* word, const size_t wordlen, DAWGNode** resu
 
 
 static bool PURE
-DAWG_exists(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
+DAWG_exists(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
 	DAWGNode* node;
 
 	if (DAWG_find(dawg, word, wordlen, &node) > 0 and node)
@@ -519,13 +540,13 @@ DAWG_exists(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
 
 
 static bool PURE
-DAWG_longest_prefix(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
+DAWG_longest_prefix(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
 	return DAWG_find(dawg, word, wordlen, NULL);
 }
 
 
 static bool PURE
-DAWG_match(DAWG* dawg, const uint8_t* word, const size_t wordlen) {
+DAWG_match(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
 	return DAWG_longest_prefix(dawg, word, wordlen) > 0;
 }
 

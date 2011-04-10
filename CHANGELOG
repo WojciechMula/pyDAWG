@@ -1,0 +1,9 @@
+2011-04-10
+    * introduced DAWG_UNICODE preprocessor definition, that allow
+      to choose type of strings accepted by DAWG
+
+2011-04-09
+    * added support for minimal perfect hashing
+
+2011-04-xx
+    * initial implementation

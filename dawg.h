@@ -59,8 +59,8 @@ dawgnode_hash(const DAWGNode* p);
 
 
 typedef struct String {
-	ssize_t	length;		///< length of string
-	char*	chars;		///< array of chars
+	ssize_t	length;				///< length of string
+	DAWG_LETTER_TYPE* chars;	///< array of chars
 } String;
 
 
@@ -161,17 +161,17 @@ DAWG_get_hash_stats(DAWG* dawg, DAWGHashStatistics* stats);
 
 /* find word - returns longest prefix and last visited node */
 static size_t PURE
-DAWG_find(DAWG* dawg, const uint8_t* word, const size_t wordlen, DAWGNode** result);
+DAWG_find(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen, DAWGNode** result);
 
 
 /* checks if word exists in DAWG */
 static bool PURE
-DAWG_exists(DAWG* dawg, const uint8_t* word, const size_t wordlen);
+DAWG_exists(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
 
 
 /* returns longest prefix of word that exists in a DAWG */
 static bool PURE
-DAWG_longest_prefix(DAWG* dawg, const uint8_t* word, const size_t wordlen);
+DAWG_longest_prefix(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
 
 
 /**	Save DAWG in byte array.
@@ -230,7 +230,7 @@ DAWG_mph_numerate_nodes(DAWG* dawg);
 	call this function!
 */
 static int
-DAWG_mph_word2index(DAWG* dawg, const uint8_t* word, const size_t wordlen);
+DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
 
 
 /*
@@ -245,7 +245,7 @@ DAWG_mph_word2index(DAWG* dawg, const uint8_t* word, const size_t wordlen);
 	call this function!
 */
 static int
-DAWG_mph_index2word(DAWG* dawg, int index, uint8_t** word, size_t* wordlen);
+DAWG_mph_index2word(DAWG* dawg, int index, DAWG_LETTER_TYPE** word, size_t* wordlen);
 #endif
 
 

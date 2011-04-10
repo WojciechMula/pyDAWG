@@ -69,5 +69,11 @@ PyInit_pydawg(void) {
 	PyModule_AddIntConstant(module, "perfect_hasing", 0);
 #endif
 
+#ifdef DAWG_UNICODE
+	PyModule_AddIntConstant(module, "unicode", 1);
+#else
+	PyModule_AddIntConstant(module, "unicode", 0);
+#endif
+
 	return module;
 }

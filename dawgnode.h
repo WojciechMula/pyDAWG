@@ -19,7 +19,7 @@
 struct DAWGNode;
 
 typedef struct DAWGEdge {
-	uint8_t				letter;		///< link label
+	DAWG_LETTER_TYPE	letter;		///< link label
 	struct DAWGNode*	child;		///< destination
 } DAWGEdge;
 
@@ -37,7 +37,7 @@ typedef struct DAWGNode {
 
 /* allocate and initialize node */
 DAWGNode*
-dawgnode_new(const uint8_t letter);
+dawgnode_new(const DAWG_LETTER_TYPE letter);
 
 
 /* free memory occupied by node and its internal structures  */
@@ -45,19 +45,19 @@ void
 dawgnode_free(DAWGNode* node);
 
 
-/* check if node has child connected by edge labelled by byte */
+/* check if node has child connected by edge labelled by letter */
 bool PURE
-dawgnode_has_child(DAWGNode* node, const uint8_t byte);
+dawgnode_has_child(DAWGNode* node, const DAWG_LETTER_TYPE letter);
 
 
-/* returns node connected by edge labelled by byte */
+/* returns node connected by edge labelled by letter */
 DAWGNode* PURE
-dawgnode_get_child(DAWGNode* node, const uint8_t byte);
+dawgnode_get_child(DAWGNode* node, const DAWG_LETTER_TYPE letter);
 
 
 /* adds on replace link */
 DAWGNode*
-dawgnode_set_child(DAWGNode* node, const uint8_t byte, DAWGNode* child);
+dawgnode_set_child(DAWGNode* node, const DAWG_LETTER_TYPE letter, DAWGNode* child);
 
 
 /* returns size of node and its internal structures */

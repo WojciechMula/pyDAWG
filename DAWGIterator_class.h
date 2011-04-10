@@ -27,7 +27,7 @@ typedef struct DAWGIterator {
 	int			version;	///< DAWG version, used to invalidate iterator when DAWG has chanbed
 	DAWGNode*	state;		///< current node
 	List		stack;		///< stack
-	char*		buffer;		///< string buffer
+	DAWG_LETTER_TYPE* buffer;	///< string buffer
 
 } DAWGIterator;
 

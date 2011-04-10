@@ -4,7 +4,10 @@ import pydawg
 class TestDAWGBase(unittest.TestCase):
 	def setUp(self):
 		self.D = pydawg.DAWG();
-		self.words = b"cat rat attribute tribute war warbute zaaa".split()
+		if pydawg.unicode:
+			self.words = "cat rat attribute tribute war warbute zaaa".split()
+		else:
+			self.words = b"cat rat attribute tribute war warbute zaaa".split()
 
 	def add_test_words(self):
 		for word in sorted(self.words):
@@ -16,14 +19,25 @@ class TestDAWGBase(unittest.TestCase):
 class TestDAWG(TestDAWGBase):
 	def test_add_word(self):
 		D  = self.D
-		w1 = b"cat"
+		if pydawg.unicode:
+			w1 = "cat"
+		else:
+			w1 = b"cat"
+
 		D.add_word(w1)
 		D.add_word(w1)	# adding the same word again is ok
 
-		w2 = b"catalog"
+		if pydawg.unicode:
+			w2 = "catalog"
+		else:
+			w2 = b"catalog"
+
 		D.add_word(w2)	# ok 'catalog' > 'cat'
 
-		w3 = b"any"		# failure: 'any' < 'catalog'
+		if pydawg.unicode:
+			w3 = "any"
+		else:
+			w3 = b"any"		# failure: 'any' < 'catalog'
 		with self.assertRaises(ValueError):
 			D.add_word(w3)
 
@@ -33,7 +47,10 @@ class TestDAWG(TestDAWGBase):
 
 		D.close()	# now close
 		with self.assertRaises(AttributeError):
-			D.add_word(b"won't work")
+			if pydawg.unicode:
+				D.add_word("won't work")
+			else:
+				D.add_word(b"won't work")
 
 		D.clear()	# clear, reset state
 		D = self.add_test_words()
@@ -76,7 +93,11 @@ class TestDAWG(TestDAWGBase):
 			self.assertTrue(word in D);
 
 
-		inexisting = b"tree horse sky za at".split()
+		if pydawg.unicode:
+			inexisting = "tree horse sky za at".split()
+		else:
+			inexisting = b"tree horse sky za at".split()
+
 		for word in inexisting:
 			self.assertFalse(D.exists(word))
 			self.assertTrue(word not in D);
@@ -84,31 +105,51 @@ class TestDAWG(TestDAWGBase):
 
 	def test_match(self):
 		D = self.add_test_words()
+		
+		if pydawg.unicode:
+			prefixes_true = "c r ra a at attr warb t tr".split()
+		else:
+			prefixes_true = b"c r ra a at attr warb t tr".split()
 
-		prefixes_true = b"c r ra a at attr warb t tr".split()
 		for word in prefixes_true:
 			self.assertTrue(D.match(word))
 		
 		for word in self.words:
 			self.assertTrue(D.match(word))
 		
-		prefixes_false = b"hash yellow dark pinapple".split()
+		if pydawg.unicode:
+			prefixes_false = "hash yellow dark pinapple".split()
+		else:
+			prefixes_false = b"hash yellow dark pinapple".split()
+
 		for word in prefixes_false:
 			self.assertFalse(D.match(word))
 		
-		self.assertFalse(D.match(b""))
+		if pydawg.unicode:
+			self.assertFalse(D.match(""))
+		else:
+			self.assertFalse(D.match(b""))
 
 
 	def test_longest_prefix(self):
 		D = self.add_test_words()
+		
+		if pydawg.unicode:
+			prefixes = "a at att attri attribu attribut attribute".split()
+		else:
+			prefixes = b"a at att attri attribu attribut attribute".split()
 
-		prefixes = b"a at att attri attribu attribut attribute".split()
 		for word in prefixes:
 			self.assertEqual(D.longest_prefix(word), len(word))
 
-		self.assertEqual(D.longest_prefix(b"rating"), 3)	# "rat"
-		self.assertEqual(D.longest_prefix(b""), 0)
-		self.assertEqual(D.longest_prefix(b"y"), 0)
+		if pydawg.unicode:
+			self.assertEqual(D.longest_prefix("rating"), 3)	# "rat"
+			self.assertEqual(D.longest_prefix(""), 0)
+			self.assertEqual(D.longest_prefix("y"), 0)
+		else:
+			self.assertEqual(D.longest_prefix(b"rating"), 3)	# "rat"
+			self.assertEqual(D.longest_prefix(b""), 0)
+			self.assertEqual(D.longest_prefix(b"y"), 0)
 
 	
 	def test_words(self):
@@ -165,8 +206,12 @@ class TestDumpLoad(TestDAWGBase):
 		self.assertEqual(L, N)
 		self.assertEqual(Ls, Ns)
 		
-		D.add_word(b"zip")
-		D.add_word(b"zzza")
+		if pydawg.unicode:
+			D.add_word("zip")
+			D.add_word("zzza")
+		else:
+			D.add_word(b"zip")
+			D.add_word(b"zzza")
 	
 
 	def test_load_empty(self):
@@ -181,8 +226,12 @@ class TestDumpLoad(TestDAWGBase):
 		self.assertEqual(L, N)
 		self.assertEqual(Ls, Ns)
 
-		D.add_word(b"zip")
-		D.add_word(b"zzza")
+		if pydawg.unicode:
+			D.add_word("zip")
+			D.add_word("zzza")
+		else:
+			D.add_word(b"zip")
+			D.add_word(b"zzza")
 
 
 class TestPickle(TestDAWGBase):
@@ -221,10 +270,16 @@ class TestMPH(TestDAWGBase):
 			self.assertEqual(max(S), len(D))
 
 			# inexising words
-			index = D.word2index(b"xyz")
-			self.assertEqual(index, None)
-			index = D.word2index(b"")
-			self.assertEqual(index, None)
+			if pydawg.unicode:
+				index = D.word2index("xyz")
+				self.assertEqual(index, None)
+				index = D.word2index("")
+				self.assertEqual(index, None)
+			else:
+				index = D.word2index(b"xyz")
+				self.assertEqual(index, None)
+				index = D.word2index(b"")
+				self.assertEqual(index, None)
 
 
 	def test_index2word(self):
@@ -248,7 +303,11 @@ class TestMPH(TestDAWGBase):
 			# test 1st set
 			test()
 
-			word = b"zebra"
+			if pydawg.unicode:
+				word = "zebra"
+			else:
+				word = b"zebra"
+
 			D.add_word(word)
 
 			# test 2nd set, after adding a word
