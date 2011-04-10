@@ -50,7 +50,7 @@ Property
 ~~~~~~~~
 
 ``state`` [read-only integer]
-	Following property values are possible:
+	Following values are possible:
 
 	* ``pydawg.EMPTY`` --- no words in a set;
 	* ``pydawg.ACTIVE`` --- there is at least one word in a set,

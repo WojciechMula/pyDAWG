@@ -4,18 +4,17 @@ def dumpdata2dot(nodes, edges, file):
 
 	writeln("digraph DAWG {");
 
-	for nodeid, end, number in nodes:
+	for nodeid, end in nodes:
 		if end:
-			writeln("node%d [shape=doublecircle, label=\"%s\"]" % (nodeid, number))
+			writeln("N%x [shape=doublecircle, label=\"\"]" % nodeid)
 		else:
-			writeln("node%d [shape=circle, label=\"%s\"]" % (nodeid, number))
+			writeln("N%x [shape=circle, label=\"\"]" % nodeid)
 
-	
 	for srcid, char, dstid in edges:
-		if type(char) == bytes:
+		if type(char) is bytes:
 			char = str(char, "ascii")
 
-		writeln("node%d -> node%d [label=\"%c\"]" % (srcid, dstid, char))
+		writeln("N%x -> N%x [label=\"%c\"]" % (srcid, dstid, char))
 
 	writeln("}");
 

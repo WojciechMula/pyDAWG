@@ -13,10 +13,12 @@
 
 
 class DAWGNode:
+	__slots__ = ["children", "final", "number"]
+
 	def __init__(self, char):
 		self.children = {}
-		self.parent = None
-		self.final = False
+		self.final  = False
+		self.number = None
 
 	def get_next(self, char):
 		try:
@@ -26,7 +28,6 @@ class DAWGNode:
 
 	def set_next(self, char, child):
 		self.children[char] = child
-		child.parent = self
 
 	def has_transition(self, char):
 		return char in self.children
@@ -65,11 +66,18 @@ def equivalence(p, q):
 
 class DAWG:
 	def __init__(self):
+		self._numbers_valid = False
 		self.register = set()
 		self.q0 = DAWGNode(None);
 		self.wp = ''
 
+
 	def add_word(self, word):
+		assert word > self.wp
+		return self.add_word_unchecked(word)
+
+
+	def add_word_unchecked(self, word):
 		# 1. skip existing
 		i = 0;
 		s = self.q0
@@ -81,7 +89,7 @@ class DAWG:
 
 		# 2. minimize
 		if i < len(self.wp):
-			self.repl_or_reg(s, self.wp[i:])
+			self._replace_or_register(s, self.wp[i:])
 
 
 		# 3. add suffix
@@ -94,9 +102,10 @@ class DAWG:
 
 		s.final = True
 		self.wp = word
+		self._numbers_valid = False
 
 
-	def repl_or_reg(self, state, suffix):
+	def _replace_or_register(self, state, suffix):
 		stack = []
 		while suffix:
 			letter = suffix[0]
@@ -106,10 +115,8 @@ class DAWG:
 			state = next
 			suffix = suffix[1:]
 
-
 		while stack:
 			parent, letter, state = stack.pop()
-
 
 			found = False
 			for r in self.register:
@@ -125,11 +132,85 @@ class DAWG:
 			
 
 	def freeze(self):
-		self.repl_or_reg(self.q0, self.wp)
+		self._replace_or_register(self.q0, self.wp)
+		self._numbers_valid = False
+
+	close = freeze
+
+
+	def _num_nodes(self):
+		def clear_aux(node):
+			node.number = None
+			for child in node.children.values():
+				clear_aux(child)
+
+		def num_aux(node):
+			if node.number is None:
+				n = int(node.final)
+				for child in node.children.values():
+					n += num_aux(child)
+
+				node.number = n
+
+			return node.number
+
+		if not self._numbers_valid:
+			clear_aux(self.q0)
+			num_aux(self.q0)
+			self._numbers_valid = True
+
+
+	def word2index(self, word):
+		self._num_nodes()
+
+		state = self.q0
+		index = 0
+		for c in word:
+			try:
+				next = state.children[c]
+			except KeyError:
+				return None
+
+			for C in sorted(state.children):
+				if C < c:
+					index += state.children[C].number
+				else:
+					break
+
+			state = next
+			if state.final:
+				index = index + 1
+		#for
+
+		return index
+
+
+	def index2word(self, index):
+		self._num_nodes()
+
+		state = self.q0
+		count = index
+		output_word = ""
+		while True:
+			for c in sorted(state.children):
+				tmp = state.get_next(c)
+				if tmp.number < count:
+					count -= tmp.number
+				else:
+					output_word += c
+					state = tmp
+					if state.final:
+						count -= 1
+
+					break
+			#for
+			if count <= 0:
+				break
+
+		return output_word
 
 
 	def as_dot(self, file):
-
 		nodes = set()
 		edges = []
 		tmp   = set()
@@ -164,34 +245,43 @@ class DAWG:
 		return L
 
 
+	def __iter__(self):
+		return iter(self.words())
+
+
 import os
 
 def main():
 	words = "aimaient aimais aimait aime aiment".split()
 	words = "cat rat attribute tribute".split()
 
-	n = 1
-	def dump():
-		nonlocal n
-		name = '%d.dot' % n
+	def dump(name):
 		with open(name, 'wt') as f:
 			D.as_dot(f)
 
-		n += 1
-		return name
 
 	D = DAWG()
 	for word in sorted(words):
 		print(word)
 		D.add_word(word)
-		#dump()
 
 	D.freeze()
-	name = dump()
-	os.system("dotty %s" % name)
 
-	print(words)
-	print(D.words())
+	# MPH test
+	for word in words:
+		print(word, "=>", D.word2index(word))
+
+	for index in range(1, len(words) + 1):
+		print(index, "=>", D.index2word(index))
+
+
+	if 1:
+		# show image of graph
+		name = "dawg.dot"
+		dump(name)
+		os.system("dotty %s" % name)
+
+	print(D.words(), set(D.words()) == set(words))
 
 
 if __name__ == '__main__':
