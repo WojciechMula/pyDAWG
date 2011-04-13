@@ -29,6 +29,7 @@ DAWG_init(DAWG* dawg) {
 	dawg->count	= 0;
 	dawg->state	= EMPTY;
 	dawg->longest_word = 0;
+	dawg->visited_marker = 1;
 
 	hashtable_init(&dawg->reg, 101);
 
@@ -440,17 +441,18 @@ DAWG_traverse_clear_visited(DAWGNode* node) {
 
 
 int
-DAWG_traverse_DFS_once_aux(DAWGNode* node, const size_t depth, DAWG_traverse_callback callback, void* extra) {
-	if (node->visited != 0)
+DAWG_traverse_DFS_once_aux(DAWGNode* node, const size_t depth, const uint16_t visited, DAWG_traverse_callback callback, void* extra) {
+	if (node->visited != visited) {
+		node->visited = visited;
+		int i;
+		for (i=0; i < node->n; i++)
+			if (DAWG_traverse_DFS_once_aux(node->next[i].child, depth + 1, visited, callback, extra) == 0)
+				return 0;
+
+		return callback(node, depth, extra);
+	}
+	else
 		return 1;
-
-	node->visited = 1;
-	int i;
-	for (i=0; i < node->n; i++)
-		if (DAWG_traverse_DFS_once_aux(node->next[i].child, depth + 1, callback, extra) == 0)
-			return 0;
-
-	return callback(node, depth, extra);
 }
 
 
@@ -460,8 +462,16 @@ DAWG_traverse_DFS_once(DAWG* dawg, DAWG_traverse_callback callback, void* extra)
 	ASSERT(callback);
 
 	if (dawg->q0) {
-		DAWG_traverse_clear_visited(dawg->q0);
-		return DAWG_traverse_DFS_once_aux(dawg->q0, 0, callback, extra);
+		if (dawg->visited_marker == 0) {
+			// counter wrapped, visited fields have to be cleared
+			puts("cleared");
+			DAWG_traverse_clear_visited(dawg->q0);
+			dawg->visited_marker += 1;
+		}
+
+		const int ret = DAWG_traverse_DFS_once_aux(dawg->q0, 0, dawg->visited_marker, callback, extra);
+		dawg->visited_marker += 1;
+		return ret;
 	}
 	else
 		return 1;

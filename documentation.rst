@@ -87,6 +87,29 @@ Basic mathods
 ``words() => list``
 	Returns list of all words.
 
+``find_all([word, [wildchar, [how]]]) => iterator``
+	Returns iterator that match words depending on ``word`` argument.
+
+	``find_all()``
+		does the same job as ``iter()``
+
+	``find_all(prefix)``
+		Yields words that share a prefix
+
+	``find_all(pattern, wildchar, [how])``
+		Yields words that match a ``pattern`` with given ``wildchar`` (wildchar
+		matches any char). Parameter ``how`` controls which words are matched:
+		
+		``MATCH_EXACT_LENGTH``
+			words with the same length as a pattern
+
+		``MATCH_AT_LEAST_PREFIX``
+			words of length not less then pattern
+
+		``MATCH_AT_MOST_PREFIX``
+			words of length no greater then pattern
+
+
 ``clear()``
 	Erase all words from set.
 

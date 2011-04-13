@@ -238,8 +238,139 @@ dawgmeth_match(PyObject* self, PyObject* value) {
 
 
 static PyObject*
-dawgmeth_iter(PyObject* self) {
-	return DAWGIterator_new((DAWGclass*)self);
+dawgmeth_iterator(PyObject* self) {
+	return DAWGIterator_new(
+			(DAWGclass*)self,
+			NULL,
+			0,
+			false,
+			0,
+			MATCH_AT_LEAST_PREFIX
+	);
+}
+
+
+#define dawgmeth_find_all_doc \
+	""
+
+static PyObject*
+dawgmeth_find_all(PyObject* self, PyObject* args) {
+#define dawg (((DAWGclass*)self)->dawg)
+	PyObject* arg1 = NULL;
+	PyObject* arg2 = NULL;
+	PyObject* arg3 = NULL;
+	DAWG_LETTER_TYPE* word;
+	ssize_t wordlen;
+
+	DAWG_LETTER_TYPE wildcard;
+	bool use_wildcard = false;
+	PatternMatchType matchtype = MATCH_AT_LEAST_PREFIX;
+
+	// arg 1: prefix/prefix pattern
+	if (args) 
+		arg1 = PyTuple_GetItem(args, 0);
+	else
+		arg1 = NULL;
+	
+	if (arg1) {
+		arg1 = pymod_get_string(arg1, &word, &wordlen);
+		if (arg1 == NULL)
+			goto error;
+	}
+	else {
+		PyErr_Clear();
+		word = NULL;
+		wordlen = 0;
+	}
+
+	// arg 2: wildcard
+	if (args)
+		arg2 = PyTuple_GetItem(args, 1);
+	else
+		arg2 = NULL;
+
+	if (arg2) {
+		DAWG_LETTER_TYPE* tmp;
+		ssize_t len;
+
+		arg2 = pymod_get_string(arg2, &tmp, &len);
+		if (arg2 == NULL)
+			goto error;
+		else {
+			if (len == 1) {
+				wildcard = tmp[0];
+				use_wildcard = true;
+			}
+			else {
+				PyErr_SetString(PyExc_ValueError, "wildcard have to be single character");
+				goto error;
+			}
+		}
+	}
+	else {
+		PyErr_Clear();
+		wildcard = 0;
+		use_wildcard = false;
+	}
+
+	// arg3: matchtype
+	matchtype = MATCH_AT_LEAST_PREFIX;
+	if (args) {
+		arg3 = PyTuple_GetItem(args, 2);
+		if (arg3) {
+			Py_ssize_t val = PyNumber_AsSsize_t(arg3, PyExc_OverflowError);
+			if (val == -1 and PyErr_Occurred())
+				goto error;
+
+			switch ((PatternMatchType)val) {
+				case MATCH_AT_LEAST_PREFIX:
+				case MATCH_AT_MOST_PREFIX:
+				case MATCH_EXACT_LENGTH:
+					matchtype = (PatternMatchType)val;
+					break;
+
+				default:
+					PyErr_SetString(PyExc_ValueError,
+						"third argument have to be one of MATCH_EXACT_LENGTH, "
+						"MATCH_AT_LEAST_PREFIX, MATCH_AT_LEAST_PREFIX"
+					);
+					goto error;
+			}
+		}
+		else {
+			PyErr_Clear();
+			if (use_wildcard)
+				matchtype = MATCH_EXACT_LENGTH;
+			else
+				matchtype = MATCH_AT_LEAST_PREFIX;
+		}
+	}
+
+
+	// 
+	DAWGIterator* iter;
+	iter = (DAWGIterator*)DAWGIterator_new(
+				(DAWGclass*)self,
+				word,
+				wordlen,
+				use_wildcard,
+				wildcard,
+				matchtype
+			);
+
+	Py_XDECREF(arg1);
+	Py_XDECREF(arg2);
+
+	if (iter)
+		return (PyObject*)iter;
+	else
+		return NULL;
+
+error:
+	Py_XDECREF(arg1);
+	Py_XDECREF(arg2);
+	return NULL;
+#undef dawg
 }
 
 
@@ -797,6 +928,7 @@ PyMethodDef dawg_methods[] = {
 	method(match,				METH_O),
 	method(longest_prefix,		METH_O),
 	method(words,				METH_NOARGS),
+	method(find_all,			METH_VARARGS),
 	method(clear,				METH_NOARGS),
 	method(close,				METH_NOARGS),
 	{"freeze", dawgmeth_close, METH_NOARGS, dawgmeth_close_doc},	// alias
@@ -845,7 +977,7 @@ PyTypeObject dawg_type = {
 	0,                                          /* tp_clear */
 	0,                                          /* tp_richcompare */
 	0,                                          /* tp_weaklistoffset */
-	dawgmeth_iter,								/* tp_iter */
+	dawgmeth_iterator,							/* tp_iter */
 	0,                                          /* tp_iternext */
 	dawg_methods,								/* tp_methods */
 	dawg_members,								/* tp_members */

@@ -96,6 +96,7 @@ typedef struct DAWG {
 	int			count;			///< number of distinct words
 	int			longest_word;	///< length of the longest word (useful when iterating through words, cheap to keep up to date)
 	DAWGState	state;			///< DAWG state
+	uint16_t	visited_marker;	///< visited marker (used by DAWG_traverse_DFS_once)
 
 	HashTable	reg;			///< registry -- valid states
 	String		prev_word;		///< previosuly added word

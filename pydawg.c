@@ -61,6 +61,10 @@ PyInit_pydawg(void) {
 	constant(EMPTY);
 	constant(ACTIVE);
 	constant(CLOSED);
+
+	constant(MATCH_EXACT_LENGTH);
+	constant(MATCH_AT_MOST_PREFIX);
+	constant(MATCH_AT_LEAST_PREFIX);
 #undef constant
 
 #ifdef DAWG_PERFECT_HASHING

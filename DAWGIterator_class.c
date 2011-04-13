@@ -12,6 +12,7 @@
 */
 
 #include "DAWGIterator_class.h"
+#include "dawgnode.h"
 
 
 static PyTypeObject dawg_iterator_type;
@@ -29,7 +30,16 @@ typedef struct DAWGIteratorStackItem {
 
 
 static PyObject*
-DAWGIterator_new(DAWGclass* dawg) {
+DAWGIterator_new(
+	DAWGclass* dawg,
+	DAWG_LETTER_TYPE* word,
+	const size_t wordlen,
+
+	const bool use_wildcard,
+	const DAWG_LETTER_TYPE wildcard,
+
+	const PatternMatchType matchtype
+) {
 	ASSERT(dawg);
 
 	DAWGIterator* iter;
@@ -40,12 +50,23 @@ DAWGIterator_new(DAWGclass* dawg) {
 
 	iter->dawg		= dawg;
 	iter->version	= dawg->version;
+	iter->pattern	= NULL;
+	iter->pattern_length = 0;
+	iter->use_wildcard = use_wildcard;
+	iter->wildcard	= wildcard;
+	iter->matchtype = matchtype;
 	list_init(&iter->stack);
+
+	ASSERT(
+		matchtype == MATCH_EXACT_LENGTH or
+		matchtype == MATCH_AT_LEAST_PREFIX or
+		matchtype == MATCH_AT_MOST_PREFIX
+	);
 
 	StackItem* new_item = (StackItem*)list_item_new(sizeof(StackItem));
 	if (not new_item) {
 		PyObject_Del((PyObject*)iter);
-		PyErr_SetNone(PyExc_MemoryError);
+		PyErr_NoMemory();
 		return NULL;
 	}
 
@@ -59,6 +80,19 @@ DAWGIterator_new(DAWGclass* dawg) {
 		new_item->letter = 0;
 		new_item->depth	 = 0;
 		list_push_front(&iter->stack, (ListItem*)new_item);
+	}
+
+	if (word and wordlen > 0) {
+		iter->pattern = (DAWG_LETTER_TYPE*)memalloc(wordlen * DAWG_LETTER_SIZE);
+		if (UNLIKELY(iter->pattern == NULL)) {
+			PyObject_Del((PyObject*)iter);
+			PyErr_NoMemory();
+			return NULL;
+		}
+		else {
+			iter->pattern_length = wordlen;
+			memcpy(iter->pattern, word, wordlen * DAWG_LETTER_SIZE);
+		}
 	}
 
 	Py_INCREF((PyObject*)iter->dawg);
@@ -99,25 +133,70 @@ DAWGIterator_next(PyObject* self) {
 		if (item == NULL or item->node == NULL)
 			return NULL; /* Stop iteration */
 
-		iter->state = item->node;
-		const int n = iter->state->n;
-		int i;
-		for (i=0; i < n; i++) {
-			StackItem* new_item = (StackItem*)list_item_new(sizeof(StackItem));
-			if (not new_item) {
-				PyErr_NoMemory();
-				return NULL;
-			}
+		const int index = item->depth;
+		if (iter->matchtype != MATCH_AT_LEAST_PREFIX and index > iter->pattern_length) {
+			continue;
+		}
 
-			new_item->node  = iter->state->next[i].child;
-			new_item->letter= iter->state->next[i].letter;
-			new_item->depth = item->depth + 1;
-			list_push_front(&iter->stack, (ListItem*)new_item);
+		bool output;
+		switch (iter->matchtype) {
+			case MATCH_EXACT_LENGTH:
+				output = (index == iter->pattern_length);
+				break;
+
+			case MATCH_AT_MOST_PREFIX:
+				output = (index <= iter->pattern_length);
+				break;
+				
+			case MATCH_AT_LEAST_PREFIX:
+			default:
+				output = (index >= iter->pattern_length);
+				break;
+
+		}
+
+		iter->state = item->node;
+
+		if ((index >= iter->pattern_length) or
+		    (iter->use_wildcard and iter->pattern[index] == iter->wildcard)) {
+
+			const int n = iter->state->n;
+			int i;
+			for (i=0; i < n; i++) {
+				StackItem* new_item = (StackItem*)list_item_new(sizeof(StackItem));
+				if (not new_item) {
+					PyErr_NoMemory();
+					return NULL;
+				}
+
+				new_item->node  = iter->state->next[i].child;
+				new_item->letter= iter->state->next[i].letter;
+				new_item->depth = index + 1;
+				list_push_front(&iter->stack, (ListItem*)new_item);
+			}
+		}
+		else {
+			// process single letter
+			const DAWG_LETTER_TYPE ch = iter->pattern[index];
+			DAWGNode* node = dawgnode_get_child(iter->state, ch);
+
+			if (node) {
+				StackItem* new_item = (StackItem*)list_item_new(sizeof(StackItem));
+				if (UNLIKELY(new_item == NULL)) {
+					PyErr_NoMemory();
+					return NULL;
+				}
+
+				new_item->node  = node;
+				new_item->letter= ch;
+				new_item->depth = index + 1;
+				list_push_front(&iter->stack, (ListItem*)new_item);
+			}
 		}
 
 		iter->buffer[item->depth] = item->letter;
 
-		if (iter->state->eow)
+		if (output and iter->state->eow)
 #ifdef DAWG_UNICODE
 			return PyUnicode_FromUnicode(iter->buffer + 1, item->depth);
 #else
