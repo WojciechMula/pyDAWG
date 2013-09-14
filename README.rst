@@ -2,12 +2,10 @@
                                pyDAWG
 ========================================================================
 
-:Author:	Wojciech Mu≥a, wojciech_mula@poczta.onet.pl
-:Date:		$Date$
-
+.. contents::
 
 Introduction
-------------
+============
 
 ``PyDAWG`` is a python module implements DAWG__ graph structure,
 which allow to store set of strings and check existence of a string in
@@ -41,8 +39,23 @@ There are two versions of module:
 Python module implements subset of C extension API.
 
 
-pydawg module installation
---------------------------
+License
+=======
+
+Library is licensed under very liberal three-clauses BSD license.
+Some portions has been released into public domain.
+
+Full text of license is available in LICENSE file.
+
+
+Author
+======
+
+Wojciech Mu≈Ça, wojciech_mula@poczta.onet.pl
+
+
+Installation
+============
 
 Compile time settings (can be change in setup.py):
 
@@ -61,6 +74,10 @@ Just run::
 If compilation succed, module is ready to use.
 
 
+API
+===
+
+
 Module
 ------
 
@@ -70,6 +87,17 @@ Module ``pydawg`` provides class ``DAWG`` and following members:
   ``state`` member of ``DAWG`` object
 * ``perfect_hashing`` -- see `Minimal perfect hashing`_
 * ``unicode`` -- see `Unicode and bytes`_
+
+
+Unicode and bytes
+~~~~~~~~~~~~~~~~~
+
+Type of strings accepted and returned by ``DAWG`` methods can be
+either **unicode** or **bytes**, depending on compile time
+settings (preprocessor definition ``DAWG_UNICODE``). Value of
+module member ``unicode`` informs about chosen type.
+
+
 
 
 ``DAWG`` class
@@ -290,21 +318,3 @@ Other
 
 	Approx memory occupied by hash table is
 	``table_size * element_size + items_count * item_size``.
-
-
-Unicode and bytes
------------------
-
-Type of strings accepted and returned by ``DAWG`` methods can be
-either **unicode** or **bytes**, depending on compile time
-settings (preprocessor definition ``DAWG_UNICODE``). Value of
-module member ``unicode`` informs about chosen type.
-
-
-License
--------
-
-Library is licensed under very liberal three-clauses BSD license.
-Some portions has been released into public domain.
-
-Full text of license is available in LICENSE file.
