@@ -9,7 +9,7 @@
 Introduction
 ------------
 
-``PyDAWG`` is a python module implements :enwiki:`DAWG` graph structure,
+``PyDAWG`` is a python module implements DAWG__ graph structure,
 which allow to store set of strings and check existence of a string in
 linear time (in terms of a string length).
 
@@ -20,10 +20,45 @@ Prof. Jan Daciuk offers also some useful documentation, presentations and
 even sample code on `his site`__.
 
 The algorithm asserts that input words are **sorted** in
-:enwiki:`lexicographic order`; default Python ``sort()``
+`lexicographic order`__; default Python ``sort()``
 orders strings correctly.
 
+Also **minimal perfect hashing** (MPH) is supported, i.e. there is a function
+that maps words to unique number; this function is bidirectional, its possible
+to find number for given word or get word from number.
+
 __ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
+__ http://en.wikipedia.org/wiki/DAWG
+__ http://en.wikipedia.org/wiki/lexicographic%20order
+
+------------------------------------------------------------------------
+
+There are two versions of module:
+
+* **C extension**, compatible only with Python3;
+* pure python module, compatible with Python 2 and 3.
+
+Python module implements subset of C extension API.
+
+
+pydawg module installation
+--------------------------
+
+Compile time settings (can be change in setup.py):
+
+* ``DAWG_UNICODE`` --- if defined, DAWG accepts and returns
+  unicode strings, else bytes are supported
+
+* ``DAWG_PERFECT_HASHING`` --- when defined, minimal perfect
+  hashing is enabled (methods word2index and index2word are
+  available)
+
+
+Just run::
+
+		$ python setup.py install
+
+If compilation succed, module is ready to use.
 
 
 Module
@@ -131,7 +166,7 @@ iterator, a lazy version of ``words()`` method.
 Minimal perfect hashing
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Minimal :enwiki:`perfect hashing` (MPH) allows to find unique number
+Minimal `perfect hashing`__ (MPH) allows to find unique number
 representing any word from DAWG, and also find word with given number.
 Numbers are in always in range 1 ... ``len(DAWG)``.
 
@@ -147,6 +182,7 @@ MPH feature is enabled during compilation time if preprocessor
 definition ``DAWG_PERFECT_HASHING`` exists. Module member
 ``perfect_hashing`` reflects this setting.
 
+__ http://en.wikipedia.org/wiki/perfect%20hashing
 
 .. warning::
 	Words numbering is done for the whole DAWG. If new words
