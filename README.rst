@@ -202,7 +202,7 @@ Finally, this feature makes possible to perform fast lookups as
 in a regular dictionary.
 
 Algorithm used for MPH is described in *Applications of Finite Automata
-Representing Large Vocabularies*, **Claudio Lucchiesi** and **Tomasz
+Representing Large Vocabularies*, **Claudio Lucchesi** and **Tomasz
 Kowaltowski**, Software Practice and Experience, 23(1), pp. 15--30, Jan.
 1993.
 
