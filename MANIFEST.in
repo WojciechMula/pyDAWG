@@ -1,0 +1,4 @@
+include README.rst
+include *.c
+include *.h
+graft hash
