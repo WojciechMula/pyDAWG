@@ -3,12 +3,9 @@
 	
 	common definitions and includes
 
-	Author    : Wojciech Mu≥a, wojciech_mula@poczta.onet.pl
+	Author    : Wojciech Mu≈Ça, wojciech_mula@poczta.onet.pl
 	WWW       : http://0x80.pl/proj/pydawg/
 	License   : public domain
-	Date      : $Date: $
-
-	$Id$
 */
 
 #ifndef ahocorasick_common_h_included__
@@ -62,6 +59,16 @@
 #	define	ASSERT(expr)	do {if (!(expr)) {printf("%s:%s:%d - '%s' failed!\n", __FILE__, __FUNCTION__, __LINE__, #expr); abort();} }while(0)
 #else
 #	define	ASSERT(expr)
+#endif
+
+#if __SIZEOF_POINTER__ != 4 && __SIZEOF_POINTER__ != 8
+#	error "unsupported pointer size"
+#endif
+
+#if __SIZEOF_POINTER__ == 4
+#	define	MACHINE32BIT
+#else
+#	define	MACHINE64BIT
 #endif
 
 #ifndef __cplusplus

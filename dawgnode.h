@@ -3,12 +3,9 @@
 
 	Declaration of nodes/edges of graph.
 
-	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	Author    : Wojciech Muła, wojciech_mula@poczta.onet.pl
 	WWW       : http://0x80.pl/proj/pydawg/
 	License   : 3-clauses BSD (see LICENSE)
-	Date      : $Date$
-
-	$Id$
 */
 
 #ifndef dawgnode_h_included__
@@ -55,7 +52,7 @@ DAWGNode* PURE
 dawgnode_get_child(DAWGNode* node, const DAWG_LETTER_TYPE letter);
 
 
-/* adds on replace link */
+/* adds or replace link */
 DAWGNode*
 dawgnode_set_child(DAWGNode* node, const DAWG_LETTER_TYPE letter, DAWGNode* child);
 

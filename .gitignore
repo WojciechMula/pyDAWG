@@ -2,3 +2,5 @@
 *.pyc
 dist
 MANIFEST
+build
+*.so

@@ -7,15 +7,12 @@
 	Algorithm is described in:
 	
 	"Applications of Finite Automata Representing Large Vocabularies",
-	Claudio Lucchiesi and Tomasz Kowaltowski, 
+	Claudio Lucchesi and Tomasz Kowaltowski, 
 	Software Practice and Experience, 23(1), pp. 15--30, Jan. 1993.
 
-	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	Author    : Wojciech Muła, wojciech_mula@poczta.onet.pl
 	WWW       : http://0x80.pl/proj/pydawg/
 	License   : 3-clauses BSD (see LICENSE)
-	Date      : $Date$
-
-	$Id$
 */
 
 #ifdef DAWG_PERFECT_HASHING

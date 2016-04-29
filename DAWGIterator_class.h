@@ -3,13 +3,10 @@
 
 	Declaration of python class DAWG iterator.
 
-	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	Author    : Wojciech Muła, wojciech_mula@poczta.onet.pl
 	WWW       : http://0x80.pl/proj/pydawg/
 	License   : 3-clauses BSD (see LICENSE)
 	License   : Public domain
-	Date      : $Date$
-
-	$Id$
 */
 
 #ifndef pydawg_DAWGIterator_class_h_included__

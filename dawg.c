@@ -9,12 +9,9 @@
 	Computational Linguistics, 26(1), March 2000.
 
 
-	Author    : Wojciech Mu³a, wojciech_mula@poczta.onet.pl
+	Author    : Wojciech Muła, wojciech_mula@poczta.onet.pl
 	WWW       : http://0x80.pl/proj/pydawg/
 	License   : 3-clauses BSD (see LICENSE)
-	Date      : $Date$
-
-	$Id$
 */
 
 #include "dawg.h"
@@ -340,24 +337,31 @@ dawgnode_hash(const DAWGNode* p) {
 #define byte2(x) (((x) >> 16) & 0xff)
 #define byte3(x) (((x) >> 24) & 0xff)
 
+#define FNV_step32(x) \
+        FNV_step(byte0(x)) \
+        FNV_step(byte1(x)) \
+        FNV_step(byte2(x)) \
+        FNV_step(byte3(x))
+
 #if DAWG_LETTER_SIZE == 1
 		FNV_step(p->next[i].letter);
 #elif DAWG_LETTER_SIZE == 2
 		FNV_step(byte0(p->next[i].letter));
 		FNV_step(byte1(p->next[i].letter));
 #else
-		FNV_step(byte0(p->next[i].letter));
-		FNV_step(byte1(p->next[i].letter));
-		FNV_step(byte2(p->next[i].letter));
-		FNV_step(byte3(p->next[i].letter));
+		FNV_step32(p->next[i].letter);
 #endif
 
-
+#if __SIZEOF_POINTER__ == 4
 		const uint32_t ptr = (uint32_t)(p->next[i].child);
-		FNV_step(byte0(ptr));
-		FNV_step(byte1(ptr));
-		FNV_step(byte2(ptr));
-		FNV_step(byte3(ptr));
+        FNV_step32(ptr);
+#elif __SIZEOF_POINTER__ == 8
+        const uint64_t ptr = (uint64_t)(p->next[i].child);
+        FNV_step32(ptr & 0xfffffffful);
+        FNV_step32(ptr >> 32);
+#else
+#   error "Unsupported pointer size"
+#endif
 	}
 
 #undef byte0
