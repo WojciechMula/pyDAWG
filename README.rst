@@ -2,6 +2,9 @@
                                pyDAWG
 ========================================================================
 
+.. image:: https://travis-ci.org/WojciechMula/pyDAWG.svg?branch=master
+    :target: https://travis-ci.org/WojciechMula/pyDAWG
+
 .. contents::
 
 Introduction
@@ -25,8 +28,8 @@ Also **minimal perfect hashing** (MPH) is supported, i.e. there is a function
 that maps words to unique number; this function is bidirectional, its possible
 to find number for given word or get word from number.
 
-__ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
 __ http://en.wikipedia.org/wiki/DAWG
+__ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
 __ http://en.wikipedia.org/wiki/lexicographic%20order
 
 ------------------------------------------------------------------------
