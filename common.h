@@ -47,7 +47,6 @@
 #	define	UNUSED
 #endif
 
-#define DEBUG
 #ifdef DEBUG
 #	include <assert.h>
 #	define	ASSERT(expr)	do {if (!(expr)) {printf("%s:%s:%d - '%s' failed!\n", __FILE__, __FUNCTION__, __LINE__, #expr); abort();} }while(0)
@@ -89,9 +88,17 @@ void memfree(void* addr) {
     printf("free %p\n", addr);
     PyMem_Free(addr);
 }
+
+void *memcalloc(size_t nmemb, size_t size) {
+    void* addr = PyMem_Calloc(nmemb, size);
+    printf("calloc %p %u\n", addr, nmemb*size);
+    return addr;
+}
+
 #else
 #   define memalloc PyMem_Malloc
 #   define memfree  PyMem_Free
+#   define memcalloc PyMem_Calloc
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
