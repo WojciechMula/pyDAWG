@@ -90,7 +90,12 @@ void memfree(void* addr) {
 }
 
 void *memcalloc(size_t nmemb, size_t size) {
+#   if PY_VERSION_HEX >=  0x03050000
     void* addr = PyMem_Calloc(nmemb, size);
+#   else
+    void *addr = memalloc(nmemb*size);
+    memset(addr, 0, nmemb*size);
+#   endif
     printf("calloc %p %u\n", addr, nmemb*size);
     return addr;
 }
@@ -98,7 +103,9 @@ void *memcalloc(size_t nmemb, size_t size) {
 #else
 #   define memalloc PyMem_Malloc
 #   define memfree  PyMem_Free
-#   define memcalloc PyMem_Calloc
+#   if PY_VERSION_HEX >=  0x03050000
+#   define memcalloc	PyMem_Calloc
+#   endif
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)

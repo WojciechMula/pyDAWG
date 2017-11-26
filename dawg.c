@@ -409,7 +409,12 @@ DAWG_clear(DAWG* dawg) {
 	// Delete all nodes
 	DAWGStatistics stats;
 	DAWG_get_stats(dawg, &stats);
+#if PY_VERSION_HEX >= 0x03050000
         DAWGNode **aux_nodelist = memcalloc(stats.nodes_count, sizeof(DAWGNode *));
+#else
+        DAWGNode **aux_nodelist = memalloc(stats.nodes_count*sizeof(DAWGNode *));
+	memset(aux_nodelist, 0, stats.nodes_count*sizeof(DAWGNode *));
+#endif
 	if(dawg->q0)
 	  DAWG_clear_recurse(dawg->q0, aux_nodelist);
 	memfree(aux_nodelist);
