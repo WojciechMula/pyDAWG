@@ -36,7 +36,7 @@ typedef struct SaveAux {
 	int 	id;
 	size_t	size;
 	size_t	top;
-	void* 	array;
+	uint8_t* 	array;
 } SaveAux;
 
 
@@ -104,7 +104,7 @@ save_fill_address_table(DAWGNode* node, UNUSED const size_t depth, UNUSED void* 
 
 
 static int
-save_node(DAWGNode* node, const uint32_t node_id, void* array, addr_HashTable* addr) {
+save_node(DAWGNode* node, const uint32_t node_id, uint8_t* array, addr_HashTable* addr) {
 	int saved = 0;
 	addr_HashListItem* item;
 	DAWGNode* child;
@@ -159,7 +159,7 @@ save_node(DAWGNode* node, const uint32_t node_id, void* array, addr_HashTable* a
 
 
 static int
-DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size) {
+DAWG_save(DAWG* dawg, DAWGStatistics* stats, uint8_t** array, size_t* size) {
 	ASSERT(dawg);
 	ASSERT(stats);
 
@@ -246,7 +246,7 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size) {
 
 
 static int
-load_node(void* array, DAWGNode** _node, DAWGNode** id2node) {
+load_node(uint8_t* array, DAWGNode** _node, DAWGNode** id2node) {
 	int loaded = 0;
 	DAWGNode* node = memalloc(sizeof(DAWGNode));
 	if (node == NULL) {
@@ -312,7 +312,7 @@ load_node(void* array, DAWGNode** _node, DAWGNode** id2node) {
 
 
 int
-DAWG_load(DAWG* dawg, void* array, size_t size) {
+DAWG_load(DAWG* dawg, uint8_t* array, size_t size) {
 	int result;
 	size_t top = 0;
 	size_t i;
