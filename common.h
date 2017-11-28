@@ -8,8 +8,8 @@
 	License   : public domain
 */
 
-#ifndef ahocorasick_common_h_included__
-#define ahocorasick_common_h_included__
+#ifndef dawg_common_h_included__
+#define dawg_common_h_included__
 
 #include <Python.h>
 #include <structmember.h>	// PyMemberDef
@@ -90,6 +90,12 @@ void memfree(void* addr) {
 #else
 #   define memalloc PyMem_Malloc
 #   define memfree  PyMem_Free
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+#   define PY_OBJECT_HEAD_INIT PyVarObject_HEAD_INIT(NULL, 0)
+#else
+#   define PY_OBJECT_HEAD_INIT PyVarObject_HEAD_INIT(&PyType_Type, 0)
 #endif
 
 #ifndef __cplusplus

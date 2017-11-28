@@ -670,7 +670,7 @@ static PyObject*
 dawgmeth_bindump(PyObject* self, UNUSED PyObject* args) {
 #define obj ((DAWGclass*)self)
 #define dawg (obj->dawg)
-	uint8_t* array;
+	void* array;
 	size_t size;
 
 	PyObject* res;
@@ -950,7 +950,7 @@ PyMethodDef dawg_methods[] = {
 
 static
 PyTypeObject dawg_type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PY_OBJECT_HEAD_INIT
 	"pydawg.DAWG",								/* tp_name */
 	sizeof(DAWGclass),							/* tp_size */
 	0,											/* tp_itemsize? */
@@ -966,7 +966,7 @@ PyTypeObject dawg_type = {
 	0,                                          /* tp_hash */
 	0,                                          /* tp_call */
 	0,                                          /* tp_str */
-	PyObject_GenericGetAttr,                    /* tp_getattro */
+	0,                                          /* tp_getattro */
 	0,                                          /* tp_setattro */
 	0,                                          /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,                         /* tp_flags */

@@ -206,7 +206,7 @@ DAWGIterator_next(PyObject* self) {
 #undef iter
 
 static PyTypeObject dawg_iterator_type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PY_OBJECT_HEAD_INIT
 	"DAWGIterator",								/* tp_name */
 	sizeof(DAWGIterator),						/* tp_size */
 	0,											/* tp_itemsize? */
