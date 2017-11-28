@@ -55,14 +55,22 @@
 #	define	ASSERT(expr)
 #endif
 
-#if __SIZEOF_POINTER__ != 4 && __SIZEOF_POINTER__ != 8
-#	error "unsupported pointer size"
+#if defined(__SIZEOF_POINTER__)
+#   define PYDAWG_POINTER_SIZE __SIZEOF_POINTER__
+#elif defined(_WIN64)
+#   define PYDAWG_POINTER_SIZE 8
+#elif defined(_WIN32)
+#   define PYDAWG_POINTER_SIZE 4
+#else
+#	error "Can't obtain the pointer size"
 #endif
 
-#if __SIZEOF_POINTER__ == 4
+#if PYDAWG_POINTER_SIZE == 4
 #	define	MACHINE32BIT
-#else
+#elif PYDAWG_POINTER_SIZE == 8
 #	define	MACHINE64BIT
+#else
+#   error "Unsupported pointer size"
 #endif
 
 

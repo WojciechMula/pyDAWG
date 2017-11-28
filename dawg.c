@@ -353,15 +353,15 @@ dawgnode_hash(const DAWGNode* p) {
 		FNV_step32(p->next[i].letter);
 #endif
 
-#if __SIZEOF_POINTER__ == 4
+#if defined(MACHINE32BIT)
 		const uint32_t ptr = (uint32_t)(p->next[i].child);
         FNV_step32(ptr);
-#elif __SIZEOF_POINTER__ == 8
+#elif defined(MACHINE64BIT)
         const uint64_t ptr = (uint64_t)(p->next[i].child);
         FNV_step32(ptr & 0xfffffffful);
         FNV_step32(ptr >> 32);
 #else
-#   error "Unsupported pointer size"
+#   error "Unsupported data size"
 #endif
 	}
 
