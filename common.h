@@ -33,12 +33,6 @@
 #	define DAWG_LETTER_SIZE 1
 #endif
 
-
-
-#define memalloc	PyMem_Malloc
-#define memfree		PyMem_Free
-#define memrealloc	PyMem_Realloc
-
 #ifdef __GNUC__
 #	define	LIKELY(x)	__builtin_expect(x, 1)
 #	define	UNLIKELY(x)	__builtin_expect(x, 0)
@@ -69,6 +63,25 @@
 #	define	MACHINE32BIT
 #else
 #	define	MACHINE64BIT
+#endif
+
+
+//#define DEBUG_MEM
+#ifdef DEBUG_MEM
+void* memalloc(size_t size) {
+    void* addr = PyMem_Malloc(size);
+    printf("alloc %p %u\n", addr, size);
+    return addr;
+}
+
+void memfree(void* addr) {
+    ASSERT(addr != NULL); // It's OK to call PyMem_Free with NULL, however such a call indicates mistakes.
+    printf("free %p\n", addr);
+    PyMem_Free(addr);
+}
+#else
+#   define memalloc PyMem_Malloc
+#   define memfree  PyMem_Free
 #endif
 
 #ifndef __cplusplus

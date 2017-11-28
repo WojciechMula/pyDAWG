@@ -155,7 +155,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 
 	// save previous word
 	if (dawg->prev_word.chars)
-		free(dawg->prev_word.chars);
+		memfree(dawg->prev_word.chars);
 
 	dawg->prev_word.length	= word.length;
 	dawg->prev_word.chars	= (DAWG_LETTER_TYPE*)memalloc(word.length * DAWG_LETTER_SIZE);

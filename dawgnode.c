@@ -92,12 +92,12 @@ dawgnode_set_child(DAWGNode* node, const DAWG_LETTER_TYPE letter, DAWGNode* chil
 
 	// insert (keep alphabetic order)
 	DAWGEdge* newnext = memalloc((node->n + 1) * sizeof(DAWGEdge));
-	ASSERT(newnext);
 	if (newnext == NULL)
 		return NULL;
 
 	size_t i, j;
 	i = j = 0;
+    ASSERT(node->n == 0 || (node->n > 0 && node->next != NULL));
 	while (i < node->n and node->next[i].letter < letter)
 		newnext[j++] = node->next[i++];
 
@@ -108,9 +108,11 @@ dawgnode_set_child(DAWGNode* node, const DAWG_LETTER_TYPE letter, DAWGNode* chil
 	while (i < node->n)
 		newnext[j++] = node->next[i++];
 
+	// assign the new next table
+    if (node->next) {
+	    memfree(node->next);
+    }
 
-	// assign new next table
-	memfree(node->next);
 	node->next = newnext;
 	node->n += 1;
 
