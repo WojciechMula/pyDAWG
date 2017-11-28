@@ -130,7 +130,7 @@ DAWGIterator_next(PyObject* self) {
 		if (item == NULL or item->node == NULL)
 			return NULL; /* Stop iteration */
 
-		const int index = item->depth;
+		const size_t index = item->depth;
 		if (iter->matchtype != MATCH_AT_LEAST_PREFIX and index > iter->pattern_length) {
 			continue;
 		}

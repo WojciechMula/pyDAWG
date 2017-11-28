@@ -12,7 +12,7 @@
 
 
 DAWGNode*
-dawgnode_new(const DAWG_LETTER_TYPE letter) {
+dawgnode_new() {
 	DAWGNode* new = (DAWGNode*)memalloc(sizeof(DAWGNode));
 	if (new) {
 		new->n		= 0;

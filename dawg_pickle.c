@@ -41,7 +41,7 @@ typedef struct SaveAux {
 
 
 static int
-save_fill_address_table(DAWGNode* node, const size_t depth, void* extra) {
+save_fill_address_table(DAWGNode* node, UNUSED const size_t depth, UNUSED void* extra) {
 #define self ((SaveAux*)extra)
 #define hashtable (self->LUT)
 	if (hashtable.count > hashtable.count_threshold) {

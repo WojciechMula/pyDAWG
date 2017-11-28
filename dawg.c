@@ -81,7 +81,7 @@ DAWG_add_word(DAWG* dawg, String word) {
 }
 
 
-static int ALWAYS_INLINE
+static int
 resize_hash(HashTable* hashtable) {
 	if (hashtable->count > hashtable->count_threshold)
 		return hashtable_resize(hashtable, hashtable->size * 2);
@@ -92,14 +92,15 @@ resize_hash(HashTable* hashtable) {
 
 int
 DAWG_add_word_unchecked(DAWG* dawg, String word) {
-	if (dawg->state == CLOSED)
+	if (dawg->state == CLOSED) {
 		return DAWG_FROZEN;
+    }
 
 	int ret = 1;
-	int i = 0;
+	size_t i = 0;
 
 	if (dawg->q0 == NULL) {
-		dawg->q0 = dawgnode_new(0);
+		dawg->q0 = dawgnode_new();
 		if (UNLIKELY(dawg->q0 == NULL))
 			return DAWG_NO_MEM;
 	}
@@ -120,7 +121,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 
 	// 3. add sufix
 	while (i < word.length) {
-		DAWGNode* new = dawgnode_new(word.chars[i]);
+		DAWGNode* new = dawgnode_new();
 		if (new == NULL)
 			return DAWG_NO_MEM;
 		
@@ -375,7 +376,7 @@ dawgnode_hash(const DAWGNode* p) {
 
 
 int
-DAWG_clear_aux(DAWGNode* node, const size_t depth, void* extra) {
+DAWG_clear_aux(DAWGNode* node, UNUSED const size_t depth, UNUSED void* extra) {
 	if (node->next)
 		memfree(node->next);
 
@@ -483,7 +484,7 @@ DAWG_traverse_DFS_once(DAWG* dawg, DAWG_traverse_callback callback, void* extra)
 
 
 int
-DAWG_get_stats_aux(DAWGNode* node, const size_t depth, void* extra) {
+DAWG_get_stats_aux(DAWGNode* node, UNUSED const size_t depth, UNUSED void* extra) {
 #define stats ((DAWGStatistics*)extra)
 	stats->nodes_count	+= 1;
 	stats->edges_count	+= node->n;

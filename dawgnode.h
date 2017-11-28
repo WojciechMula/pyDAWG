@@ -34,7 +34,7 @@ typedef struct DAWGNode {
 
 /* allocate and initialize node */
 DAWGNode*
-dawgnode_new(const DAWG_LETTER_TYPE letter);
+dawgnode_new(void);
 
 
 /* free memory occupied by node and its internal structures  */

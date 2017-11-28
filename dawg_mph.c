@@ -17,7 +17,7 @@
 
 #ifdef DAWG_PERFECT_HASHING
 static int
-DAWG_mph_numerate_nodes_aux(DAWGNode* node, const size_t depth, void* extra) {
+DAWG_mph_numerate_nodes_aux(DAWGNode* node, UNUSED const size_t depth, UNUSED void* extra) {
 	size_t i;
 	node->number = (int)(node->eow != 0);
 	for (i=0; i < node->n; i++)
@@ -33,9 +33,9 @@ DAWG_mph_numerate_nodes(DAWG* dawg) {
 }
 
 
-static int
+static size_t
 DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
-	int index = 0;
+	size_t index = 0;
 
 	size_t i, j;
 	DAWGNode* state;
@@ -63,7 +63,7 @@ DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordl
 
 
 static int
-DAWG_mph_index2word(DAWG* dawg, int index, DAWG_LETTER_TYPE** word, size_t* wordlen) {
+DAWG_mph_index2word(DAWG* dawg, size_t index, DAWG_LETTER_TYPE** word, size_t* wordlen) {
 	ASSERT(dawg);
 	if (index < 1 or index > dawg->count)
 		return DAWG_NOT_EXISTS;

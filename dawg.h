@@ -56,7 +56,7 @@ dawgnode_hash(const DAWGNode* p);
 
 
 typedef struct String {
-	ssize_t	length;				///< length of string
+	size_t	length;				///< length of string
 	DAWG_LETTER_TYPE* chars;	///< array of chars
 } String;
 
@@ -90,8 +90,8 @@ typedef struct DAWGHashStatistics {
 
 typedef struct DAWG {
 	DAWGNode*	q0;				///< start state
-	int			count;			///< number of distinct words
-	int			longest_word;	///< length of the longest word (useful when iterating through words, cheap to keep up to date)
+	size_t		count;			///< number of distinct words
+	size_t		longest_word;	///< length of the longest word (useful when iterating through words, cheap to keep up to date)
 	DAWGState	state;			///< DAWG state
 	uint16_t	visited_marker;	///< visited marker (used by DAWG_traverse_DFS_once)
 
@@ -227,7 +227,7 @@ DAWG_mph_numerate_nodes(DAWG* dawg);
 	DAWG_mph_numerate_nodes() have to called once before
 	call this function!
 */
-static int
+static size_t
 DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
 
 
@@ -243,7 +243,7 @@ DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordl
 	call this function!
 */
 static int
-DAWG_mph_index2word(DAWG* dawg, int index, DAWG_LETTER_TYPE** word, size_t* wordlen);
+DAWG_mph_index2word(DAWG* dawg, size_t index, DAWG_LETTER_TYPE** word, size_t* wordlen);
 #endif
 
 

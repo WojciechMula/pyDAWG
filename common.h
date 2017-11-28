@@ -44,7 +44,7 @@
 #	define	UNLIKELY(x)	__builtin_expect(x, 0)
 #	define	ALWAYS_INLINE	__attribute__((always_inline))
 #	define	PURE			__attribute__((pure))
-#	define	UNUSED			__attribute__((unused))
+#	define	UNUSED			__attribute__((__unused__))
 #else
 #	define	LIKELY(x)	x
 #	define	UNLIKELY(x)	x
