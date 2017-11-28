@@ -90,8 +90,8 @@ typedef struct DAWGHashStatistics {
 
 typedef struct DAWG {
 	DAWGNode*	q0;				///< start state
-	size_t		count;			///< number of distinct words
-	size_t		longest_word;	///< length of the longest word (useful when iterating through words, cheap to keep up to date)
+	uint64_t	count;			///< number of distinct words
+	uint64_t	longest_word;	///< length of the longest word (useful when iterating through words, cheap to keep up to date)
 	DAWGState	state;			///< DAWG state
 	uint16_t	visited_marker;	///< visited marker (used by DAWG_traverse_DFS_once)
 
@@ -168,7 +168,7 @@ DAWG_exists(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
 
 
 /* returns longest prefix of word that exists in a DAWG */
-static bool PURE
+static size_t PURE
 DAWG_longest_prefix(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
 
 

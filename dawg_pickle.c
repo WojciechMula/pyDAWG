@@ -16,7 +16,7 @@
 #define HASH_KEY_TYPE	DAWGNode*
 #define HASH_DATA_TYPE	uintptr_t
 #define HASH_EQ_FUN(a, b)	((a) == (b))
-#define HASH_GET_HASH(x)	(uintptr_t)(x)	// simple casting
+#define HASH_GET_HASH(x)	(HASH_TYPE)((uintptr_t)(x) & 0xffffffff)	// simple casting
 #define HASH_STATIC		static
 #define	HASH_ALLOC		memalloc
 #define HASH_FREE		memfree
@@ -104,7 +104,7 @@ save_fill_address_table(DAWGNode* node, UNUSED const size_t depth, UNUSED void* 
 
 
 static int
-save_node(DAWGNode* node, const uint32_t node_id, uint8_t* array, addr_HashTable* addr) {
+save_node(DAWGNode* node, const nodeid_t node_id, uint8_t* array, addr_HashTable* addr) {
 	int saved = 0;
 	addr_HashListItem* item;
 	DAWGNode* child;
@@ -188,16 +188,14 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, uint8_t** array, size_t* size) {
 	}
 
 	// save header
-#ifdef MACHINE64BIT
 #define save_8bytes(x) *(uint64_t*)(rec.array + rec.top) = (x); rec.top += 8;
-#endif
 #define save_4bytes(x) *(uint32_t*)(rec.array + rec.top) = (x); rec.top += 4;
 #define save_1byte(x) *(uint8_t*)(rec.array + rec.top) = (x); rec.top += 1;
 	save_4bytes(DUMP_MAGICK);
 	save_1byte(dawg->state);
-	save_4bytes(rec.LUT.count);	// nodes count
-	save_4bytes(dawg->count);
-	save_4bytes(dawg->longest_word);
+	save_8bytes(rec.LUT.count);	// nodes count
+	save_8bytes(dawg->count);
+	save_8bytes(dawg->longest_word);
 	if (dawg->state != EMPTY) {
 		addr_HashListItem* item;
 		item = addr_hashtable_get(&rec.LUT, dawg->q0);
@@ -215,6 +213,7 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, uint8_t** array, size_t* size) {
 		save_8bytes(0);
 #endif
 	}
+#undef save_8bytes
 #undef save_4bytes
 #undef save_1byte
 
@@ -253,7 +252,7 @@ load_node(uint8_t* array, DAWGNode** _node, DAWGNode** id2node) {
 		return DAWG_NO_MEM;
 	}
 
-	// load id and save a in lookup table
+	// load id and save it in the lookup table
 #ifdef MACHINE32BIT
 	const uint32_t id = *(uint32_t*)(array + loaded);
 	loaded += 4;
@@ -319,10 +318,10 @@ DAWG_load(DAWG* dawg, uint8_t* array, size_t size) {
 
 	uint32_t	magick;
 	DAWGState	state;
-	uint32_t	nodes_count;
-	uint32_t	words_count;
-	uint32_t	longest_word;
-	uint32_t	root_id;
+	uint64_t	nodes_count;
+	uint64_t	words_count;
+	uint64_t	longest_word;
+	nodeid_t	root_id;
 
 	if (size < DUMP_HEADER_SIZE)
 		return DAWG_DUMP_TRUNCATED;
@@ -340,9 +339,9 @@ DAWG_load(DAWG* dawg, uint8_t* array, size_t size) {
 	if (state != EMPTY and state != ACTIVE and state != CLOSED)
 		return DAWG_DUMP_INVALID_STATE;
 
-	nodes_count		= get_4bytes;
-	words_count		= get_4bytes;
-	longest_word	= get_4bytes;
+	nodes_count		= get_8bytes;
+	words_count		= get_8bytes;
+	longest_word	= get_8bytes;
 #ifdef MACHINE32BIT
 	root_id			= get_4bytes;
 #else

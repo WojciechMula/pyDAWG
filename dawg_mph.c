@@ -74,7 +74,7 @@ DAWG_mph_index2word(DAWG* dawg, size_t index, DAWG_LETTER_TYPE** word, size_t* w
 		return DAWG_NO_MEM;
 
 	size_t i;
-	int count;
+	size_t count;
 	DAWGNode* state;
 	DAWGNode* tmp;
 

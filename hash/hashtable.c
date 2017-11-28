@@ -24,7 +24,7 @@ L(hashtable_init)(L(HashTable)* hashtable, const size_t size) {
 		return -2;
 
 	hashtable->size	 = size;
-	hashtable->count_threshold = size * 0.7;
+	hashtable->count_threshold = (size_t)(size * 0.7);
 	hashtable->count = 0;
 	hashtable->table = HASH_ALLOC(size * sizeof(L(HashListItem*)));
 	if (hashtable->table == NULL)

@@ -67,8 +67,10 @@
 
 #if PYDAWG_POINTER_SIZE == 4
 #	define	MACHINE32BIT
+typedef uint32_t nodeid_t;
 #elif PYDAWG_POINTER_SIZE == 8
 #	define	MACHINE64BIT
+typedef uint64_t nodeid_t;
 #else
 #   error "Unsupported pointer size"
 #endif

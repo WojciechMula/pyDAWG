@@ -554,7 +554,7 @@ DAWG_exists(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
 }
 
 
-static bool PURE
+static size_t PURE
 DAWG_longest_prefix(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
 	return DAWG_find(dawg, word, wordlen, NULL);
 }

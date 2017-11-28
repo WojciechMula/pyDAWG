@@ -670,7 +670,7 @@ static PyObject*
 dawgmeth_bindump(PyObject* self, UNUSED PyObject* args) {
 #define obj ((DAWGclass*)self)
 #define dawg (obj->dawg)
-	void* array;
+	uint8_t* array;
 	size_t size;
 
 	PyObject* res;
@@ -827,7 +827,7 @@ dawgmeth_word2index(PyObject* self, PyObject* arg) {
 		obj->mph_version = obj->version;
 	}
 
-	const int result = DAWG_mph_word2index(
+	const size_t result = DAWG_mph_word2index(
 							&dawg,
 							word.chars,
 							word.length
