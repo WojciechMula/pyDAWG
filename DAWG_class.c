@@ -679,7 +679,7 @@ dawgmeth_bindump(PyObject* self, UNUSED PyObject* args) {
 
 	switch (DAWG_save(&dawg, &obj->stats, &array, &size)) {
 		case DAWG_OK:
-			res = PyBytes_FromStringAndSize(array, size);
+			res = PyBytes_FromStringAndSize((char*)array, size);
 			memfree(array);
 			return res;
 

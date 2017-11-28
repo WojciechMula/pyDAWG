@@ -186,7 +186,7 @@ DAWG_longest_prefix(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordl
 		DAWG_NO_MEM
 */
 static int
-DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size);
+DAWG_save(DAWG* dawg, DAWGStatistics* stats, uint8_t** array, size_t* size);
 
 
 /** Loads DAWG from data returned by DAWG_save.
@@ -206,7 +206,7 @@ DAWG_save(DAWG* dawg, DAWGStatistics* stats, void** array, size_t* size);
 		DAWG_DUMP_CORRUPTED_2
 */
 static int
-DAWG_load(DAWG* dawg, void* array, size_t size);
+DAWG_load(DAWG* dawg, uint8_t* array, size_t size);
 
 
 #ifdef DAWG_PERFECT_HASHING

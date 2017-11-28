@@ -63,9 +63,9 @@ save_fill_address_table(DAWGNode* node, UNUSED const size_t depth, UNUSED void* 
 
 	- magick		: 4 bytes
 	- state			: 1 byte
-	- nodes count	: 4 bytes
-	- words count	: 4 bytes
-	- longest word	: 4 bytes
+	- nodes count	: 8 bytes
+	- words count	: 8 bytes
+	- longest word	: 8 bytes
 	- id of root node	: 4 or 8 bytes
 
 	Format of node:
@@ -84,7 +84,7 @@ save_fill_address_table(DAWGNode* node, UNUSED const size_t depth, UNUSED void* 
 #	define DUMP_ID_SIZE 8
 #endif
 
-#define DUMP_HEADER_SIZE (1 + 4*4 + DUMP_ID_SIZE)
+#define DUMP_HEADER_SIZE (1 + 4 + 3*8 + DUMP_ID_SIZE)
 #define DUMP_NODE_SIZE (DUMP_ID_SIZE + 1 + 4)
 #define DUMP_EDGE_SIZE (DAWG_LETTER_SIZE + DUMP_ID_SIZE)
 
