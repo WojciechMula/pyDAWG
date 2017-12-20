@@ -379,7 +379,8 @@ static void
 DAWG_clear_recurse(DAWGNode* node, DAWGNode** nodelist) {
 
 	// Traverse all child nodes
-	for (size_t i=0; i < node->n; i++) {
+	size_t i;
+	for (i=0; i < node->n; i++) {
 		int done = 0;
 		DAWGNode *child = node->next[i].child;
 		// see if we've already freed this node
