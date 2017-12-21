@@ -119,7 +119,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 	if (i < dawg->prev_word.length)
 		DAWG_replace_or_register(dawg, state, dawg->prev_word, i);
 
-	// 3. add sufix
+	// 3. add suffix
 	while (i < word.length) {
 		DAWGNode* new = dawgnode_new();
 		if (new == NULL)
@@ -130,7 +130,7 @@ DAWG_add_word_unchecked(DAWG* dawg, String word) {
 		dawgnode_set_child(state, word.chars[i], new);
 
 		if (item) {
-			memfree(item);
+			HASH_FREE(item);
 			resize_hash(&dawg->reg);
 			hashtable_add(&dawg->reg, state);
 		}
@@ -245,7 +245,7 @@ DAWG_replace_or_register(DAWG* dawg, DAWGNode* state, String string, const size_
 				dawgnode_free(item->child);
 
 				if (prev) {
-					memfree(prev);
+					HASH_FREE(prev);
 					resize_hash(&dawg->reg);
 					hashtable_add(&dawg->reg, item->parent);
 				}
@@ -276,7 +276,7 @@ static bool PURE
 dawgnode_equivalence(DAWGNode* p, DAWGNode* q) {
 	/*
 		Both states p and q are equivalent (subtrees
-		rooted at p and q forms same languages):
+		rooted at p and q form same languages):
 
 		1. both are final/non-final
 		2. has same number of children
@@ -375,20 +375,52 @@ dawgnode_hash(const DAWGNode* p) {
 }
 
 
-int
-DAWG_clear_aux(DAWGNode* node, UNUSED const size_t depth, UNUSED void* extra) {
+static void
+DAWG_clear_recurse(DAWGNode* node, DAWGNode** nodelist) {
+
+	// Traverse all child nodes
+	size_t i;
+	for (i=0; i < node->n; i++) {
+		int done = 0;
+		DAWGNode *child = node->next[i].child;
+		// see if we've already freed this node
+		DAWGNode **p;
+		for (p=nodelist; *p!=0; p++)
+		if (*p == child) {
+			done = 1;
+			break;
+		}
+		// If not, add it to the list and recurse over it
+		if (!done) {
+			*p = child;
+			DAWG_clear_recurse(child, nodelist);
+		}
+	}
+
+	// free the node
 	if (node->next)
 		memfree(node->next);
 
 	memfree(node);
-	return 1;
 }
 
 
 static int
 DAWG_clear(DAWG* dawg) {
-	DAWG_traverse_DFS_once(dawg, DAWG_clear_aux, NULL);
+	// Delete all nodes
+	DAWGStatistics stats;
+	DAWG_get_stats(dawg, &stats);
+#if PY_VERSION_HEX >= 0x03050000
+        DAWGNode **aux_nodelist = memcalloc(stats.nodes_count, sizeof(DAWGNode *));
+#else
+        DAWGNode **aux_nodelist = memalloc(stats.nodes_count*sizeof(DAWGNode *));
+	memset(aux_nodelist, 0, stats.nodes_count*sizeof(DAWGNode *));
+#endif
+	if(dawg->q0)
+	  DAWG_clear_recurse(dawg->q0, aux_nodelist);
+	memfree(aux_nodelist);
 
+	// Clear the main structure
 	dawg->q0	= NULL;
 	dawg->count	= 0;
 	dawg->state	= EMPTY;
@@ -469,7 +501,7 @@ DAWG_traverse_DFS_once(DAWG* dawg, DAWG_traverse_callback callback, void* extra)
 	if (dawg->q0) {
 		if (dawg->visited_marker == 0) {
 			// counter wrapped, visited fields have to be cleared
-			puts("cleared");
+			//puts("cleared");
 			DAWG_traverse_clear_visited(dawg->q0);
 			dawg->visited_marker += 1;
 		}
