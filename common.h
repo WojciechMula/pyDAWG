@@ -104,7 +104,13 @@ void *memcalloc(size_t nmemb, size_t size) {
 #   define memalloc PyMem_Malloc
 #   define memfree  PyMem_Free
 #   if PY_VERSION_HEX >=  0x03050000
-#   define memcalloc	PyMem_Calloc
+#     define memcalloc	PyMem_Calloc
+#   else
+      static inline void *memcalloc(size_t nmemb, size_t size) {
+	void *addr = memalloc(nmemb*size);
+	memset(addr, 0, nmemb*size);
+	return addr;
+      }
 #   endif
 #endif
 

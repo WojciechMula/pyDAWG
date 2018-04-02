@@ -375,50 +375,34 @@ dawgnode_hash(const DAWGNode* p) {
 }
 
 
-static void
-DAWG_clear_recurse(DAWGNode* node, DAWGNode** nodelist) {
-
-	// Traverse all child nodes
-	size_t i;
-	for (i=0; i < node->n; i++) {
-		int done = 0;
-		DAWGNode *child = node->next[i].child;
-		// see if we've already freed this node
-		DAWGNode **p;
-		for (p=nodelist; *p!=0; p++)
-		if (*p == child) {
-			done = 1;
-			break;
-		}
-		// If not, add it to the list and recurse over it
-		if (!done) {
-			*p = child;
-			DAWG_clear_recurse(child, nodelist);
-		}
-	}
-
-	// free the node
-	if (node->next)
-		memfree(node->next);
-
-	memfree(node);
+int
+DAWG_clear_aux(DAWGNode* node, UNUSED const size_t depth, void* extra) {
+  DAWGNode ***aux = (DAWGNode ***) extra;
+  // Store the node in the current position in the list and advance to the next
+  *( (*aux)++) = node;
+  return 1;
 }
 
 
 static int
 DAWG_clear(DAWG* dawg) {
+
 	// Delete all nodes
-	DAWGStatistics stats;
-	DAWG_get_stats(dawg, &stats);
-#if PY_VERSION_HEX >= 0x03050000
-        DAWGNode **aux_nodelist = memcalloc(stats.nodes_count, sizeof(DAWGNode *));
-#else
-        DAWGNode **aux_nodelist = memalloc(stats.nodes_count*sizeof(DAWGNode *));
-	memset(aux_nodelist, 0, stats.nodes_count*sizeof(DAWGNode *));
-#endif
-	if(dawg->q0)
-	  DAWG_clear_recurse(dawg->q0, aux_nodelist);
-	memfree(aux_nodelist);
+	if(dawg->q0) {
+		DAWGStatistics stats;
+		DAWGNode **aux, **aux_copy;
+		int i;
+		// Find how many nodes
+		DAWG_get_stats(dawg, &stats);
+		// Get the list of pointers to each node
+		aux = memcalloc(stats.nodes_count, sizeof(DAWGNode *));
+		aux_copy = aux;
+		DAWG_traverse_DFS_once(dawg, DAWG_clear_aux, &aux_copy);
+		// Go over the list and free all nodes
+		for(i=0; i<stats.nodes_count; i++)
+			memfree( aux[i] );
+		memfree(aux);
+	}
 
 	// Clear the main structure
 	dawg->q0	= NULL;
