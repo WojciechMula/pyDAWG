@@ -263,10 +263,18 @@ class TestMPH(TestDAWGBase):
 			self.assertEqual(min(S), 1)
 			self.assertEqual(max(S), len(D))
 
-			# inexising words
+			# unexisting words
 			index = D.word2index(conv("xyz"))
 			self.assertEqual(index, None)
 			index = D.word2index(conv(""))
+			self.assertEqual(index, None)
+
+			# Strings that are prefixes of existing words
+			# [1] a prefix not containing any valid word
+			index = D.word2index(conv("attrib"))
+			self.assertEqual(index, None)
+			# [2] a prefix that contains a valid word
+			index = D.word2index(conv("warb"))
 			self.assertEqual(index, None)
 
 

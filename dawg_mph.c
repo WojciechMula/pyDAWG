@@ -58,7 +58,7 @@ DAWG_mph_word2index(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordl
 			return DAWG_NOT_EXISTS;
 	}
 
-	return index;
+	return state->eow ? index : DAWG_NOT_EXISTS;
 }
 
 
