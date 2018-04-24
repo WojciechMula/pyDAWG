@@ -39,9 +39,9 @@ DAWG_init(DAWG* dawg) {
 
 static int
 DAWG_free(DAWG* dawg) {
-	DAWG_clear(dawg);
+	int result = DAWG_clear(dawg);
 	hashtable_destroy(&dawg->reg);
-	return 0;
+	return result;
 }
 
 
@@ -377,9 +377,10 @@ dawgnode_hash(const DAWGNode* p) {
 
 int
 DAWG_clear_aux(DAWGNode* node, UNUSED const size_t depth, void* extra) {
-  DAWGNode ***aux = (DAWGNode ***) extra;
+  DAWGNode ***ptr = (DAWGNode ***) extra;
   // Store the node in the current position in the list and advance to the next
-  *( (*aux)++) = node;
+  **ptr = node;
+  (*ptr)++;
   return 1;
 }
 
@@ -390,12 +391,15 @@ DAWG_clear(DAWG* dawg) {
 	// Delete all nodes
 	if(dawg->q0) {
 		DAWGStatistics stats;
-		DAWGNode **aux, **aux_copy;
-		int i;
+		DAWGNode **aux;
+		DAWGNode **aux_copy;
+		size_t i;
 		// Find how many nodes
 		DAWG_get_stats(dawg, &stats);
 		// Get the list of pointers to each node
 		aux = memcalloc(stats.nodes_count, sizeof(DAWGNode *));
+		if(aux==NULL)
+			return DAWG_NO_MEM;
 		aux_copy = aux;
 		DAWG_traverse_DFS_once(dawg, DAWG_clear_aux, &aux_copy);
 		// Go over the list and free all nodes
