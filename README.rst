@@ -29,7 +29,7 @@ that maps words to unique number; this function is bidirectional, its possible
 to find number for given word or get word from number.
 
 __ http://en.wikipedia.org/wiki/DAWG
-__ http://www.eti.pg.gda.pl/katedry/kiw/pracownicy/Jan.Daciuk/personal/
+__ http://www.jandaciuk.pl/
 __ http://en.wikipedia.org/wiki/lexicographic%20order
 
 ------------------------------------------------------------------------
