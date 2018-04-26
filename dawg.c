@@ -543,40 +543,38 @@ DAWG_get_hash_stats(DAWG* dawg, DAWGHashStatistics* stats) {
 }
 
 
-
-static size_t PURE
-DAWG_find(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen, DAWGNode** result) {
-	ASSERT(dawg);
-
-	DAWGNode* node = dawg->q0;
-	size_t i=0;
-	for (i=0; i < wordlen; i++) {
-		node = dawgnode_get_child(node, word[i]);
-		if (node == NULL)
-			break;
-	}
-
-	if (result)
-		*result = node;
-
-	return i;
-}
-
-
 static bool PURE
 DAWG_exists(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
-	DAWGNode* node;
+    ASSERT(dawg);
 
-	if (DAWG_find(dawg, word, wordlen, &node) > 0 and node)
-		return node->eow;
-	else
-		return false;
+    size_t i=0;
+    DAWGNode* node = dawg->q0;
+
+    for (/**/; i < wordlen; i++) {
+        node = dawgnode_get_child(node, word[i]);
+        if (node == NULL) {
+            return false;
+        }
+    }
+
+    return node->eow;
 }
 
 
 static size_t PURE
 DAWG_longest_prefix(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen) {
-	return DAWG_find(dawg, word, wordlen, NULL);
+    ASSERT(dawg);
+
+    DAWGNode* node = dawg->q0;
+    size_t i=0;
+    for (/**/; i < wordlen; i++) {
+        node = dawgnode_get_child(node, word[i]);
+        if (node == NULL) {
+            break;
+        }
+    }
+
+    return i;
 }
 
 

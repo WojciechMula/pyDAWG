@@ -157,11 +157,6 @@ static void
 DAWG_get_hash_stats(DAWG* dawg, DAWGHashStatistics* stats);
 
 
-/* find word - returns longest prefix and last visited node */
-static size_t PURE
-DAWG_find(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen, DAWGNode** result);
-
-
 /* checks if word exists in DAWG */
 static bool PURE
 DAWG_exists(DAWG* dawg, const DAWG_LETTER_TYPE* word, const size_t wordlen);
