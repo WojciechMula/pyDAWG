@@ -423,7 +423,9 @@ DAWG_load(DAWG* dawg, uint8_t* array, size_t size) {
 		} // for
 	} // node
 
-	DAWG_clear(dawg);
+	result = DAWG_clear(dawg);
+	if(result==DAWG_NO_MEM)
+		goto error;
 	dawg->q0 = (state == EMPTY) ? NULL : id2node[root_id];
 	dawg->count	= words_count;
 	dawg->longest_word = longest_word;

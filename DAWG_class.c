@@ -408,7 +408,11 @@ static PyObject*
 dawgmeth_clear(PyObject* self, UNUSED PyObject* args) {
 #define obj ((DAWGclass*)self)
 #define dawg (obj->dawg)
-	DAWG_clear(&dawg);
+	int result = DAWG_clear(&dawg);
+	if(result==DAWG_NO_MEM) {
+		PyErr_NoMemory();
+		return NULL;
+	}
 	obj->version += 1;
 	Py_RETURN_NONE;
 #undef dawg
