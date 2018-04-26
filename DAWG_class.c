@@ -534,13 +534,13 @@ dump_aux(DAWGNode* node, UNUSED const size_t depth, void* extra) {
 	}
 
 	// 1.
-	tuple = Py_BuildValue("ii", node, (int)(node->eow));
+	tuple = Py_BuildValue("Ki", node, (int)(node->eow));
 	append_tuple(Dump->nodes)
 
 	// 2.
 	for (i=0; i < node->n; i++) {
 		child = node->next[i].child;
-		tuple = Py_BuildValue("ici", node, node->next[i].letter, child);
+		tuple = Py_BuildValue("KcK", node, node->next[i].letter, child);
 		append_tuple(Dump->edges)
 	}
 
