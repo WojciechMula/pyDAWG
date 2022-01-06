@@ -17,7 +17,7 @@
 #include "dawg.h"
 #include <string.h>
 
-#include <malloc.h>
+#include <stdlib.h>
 
 
 static int
